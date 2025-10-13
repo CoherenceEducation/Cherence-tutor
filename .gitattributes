@@ -1,0 +1,7 @@
+# Enforce LF endings for all text files across platforms
+* text=auto eol=lf
+
+# You can opt-in CRLF for Windows-only scripts if needed, e.g.:
+# *.bat text eol=crlf
+
+
