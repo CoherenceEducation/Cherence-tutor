@@ -20,7 +20,7 @@ from utils.db import (
 from utils.gemini_client import get_tutor_response, check_content_safety
 
 load_dotenv()
-app = Flask(__name__)
+app = Flask(__name__, static_folder='static', template_folder='static') # if your HTML is in static
 app.config['SECRET_KEY'] = os.getenv('FLASK_SECRET_KEY')
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024
 app.config['JWT_SECRET'] = os.getenv('JWT_SECRET')
@@ -449,6 +449,10 @@ def add_security_headers(resp):
     resp.headers["Cross-Origin-Embedder-Policy"] = "unsafe-none"
     return resp
 
+    
+@app.route("/")
+def home():
+    return render_template("chat.html")
 
 if __name__ == "__main__":
     port = int(os.getenv("PORT", 5000))
