@@ -7,6 +7,7 @@ from dotenv import load_dotenv
 from flask import Flask, request, jsonify, send_from_directory, render_template_string
 from flask_cors import CORS
 from collections import defaultdict
+from flask_cors import CORS
 
 # Import utilities
 from utils.db import (
@@ -20,7 +21,8 @@ from utils.db import (
 from utils.gemini_client import get_tutor_response, check_content_safety
 
 load_dotenv()
-app = Flask(__name__, static_folder='static', template_folder='static') # if your HTML is in static
+app = Flask(__name__, static_folder='static', template_folder='static')
+CORS(app)
 app.config['SECRET_KEY'] = os.getenv('FLASK_SECRET_KEY')
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024
 app.config['JWT_SECRET'] = os.getenv('JWT_SECRET')
@@ -449,7 +451,7 @@ def add_security_headers(resp):
     resp.headers["Cross-Origin-Embedder-Policy"] = "unsafe-none"
     return resp
 
-    
+
 @app.route("/")
 def home():
     return render_template("chat.html")

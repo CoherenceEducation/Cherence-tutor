@@ -1,0 +1,5 @@
+[33mda5f6c9[m[33m ([m[1;36mHEAD -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m)[m fix: remove vercel-wsgi dependency and fix Vercel handler
+[33ma71d41f[m Fix vercel-wsgi version for Vercel build
+[33m897d39d[m Final fix for Flask on Vercel
+[33m9ddfb4c[m Fix vercel.json runtime
+[33m7a1de2f[m feat: update app and Vercel deployment config
