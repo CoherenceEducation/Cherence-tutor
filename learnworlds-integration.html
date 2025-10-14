@@ -2,25 +2,25 @@
 <style>
   /* Floating launcher button */
   .ce-chat-launcher{
-    position:fixed; right:24px; bottom:120px; z-index:9999;
-    width:64px; height:64px; border-radius:999px; border:2px solid #f7b538;
-    box-shadow:0 8px 25px rgba(2, 48, 71, 0.25);
+    position:fixed; right:20px; bottom:20px; z-index:9999;
+    width:70px; height:70px; border-radius:999px; border:3px solid #f7b538;
+    box-shadow:0 10px 30px rgba(2, 48, 71, 0.3);
     background:linear-gradient(135deg, #023047 0%, #f7b538 100%); 
     color:#fff; display:flex; align-items:center; justify-content:center;
     cursor:pointer; transition:all .3s ease;
   }
   .ce-chat-launcher:hover{ 
-    transform:translateY(-2px) scale(1.05); 
-    box-shadow:0 12px 35px rgba(2, 48, 71, 0.35); 
+    transform:translateY(-3px) scale(1.1); 
+    box-shadow:0 15px 40px rgba(2, 48, 71, 0.4); 
     border-color: #023047;
   }
 
   /* Slide-up panel (drawer) - positioned to avoid footer */
   .ce-chat-panel{
-    position:fixed; right:24px; bottom:200px; z-index:9999;
-    width: min(400px, 92vw); height: min(580px, 70vh);
+    position:fixed; right:20px; bottom:100px; z-index:9999;
+    width: min(450px, 95vw); height: min(650px, 75vh);
     border-radius:24px; overflow:hidden; background:#fff;
-    box-shadow:0 20px 60px rgba(2, 48, 71, 0.3), 0 0 0 1px rgba(247, 181, 56, 0.2);
+    box-shadow:0 25px 70px rgba(2, 48, 71, 0.35), 0 0 0 1px rgba(247, 181, 56, 0.2);
     transform: translateY(20px); opacity:0; pointer-events:none;
     transition: transform .3s ease, opacity .3s ease;
   }
@@ -81,18 +81,18 @@
   /* Mobile responsiveness */
   @media (max-width: 768px) {
     .ce-chat-panel {
-      width: calc(100vw - 48px);
-      height: min(70vh, 600px);
-      right: 24px;
-      left: 24px;
-      bottom: 120px;
+      width: calc(100vw - 40px);
+      height: min(75vh, 650px);
+      right: 20px;
+      left: 20px;
+      bottom: 100px;
     }
     .ce-chat-launcher {
       right: 20px;
-      bottom: 100px;
+      bottom: 20px;
     }
     .ce-chat-toast {
-      bottom: 180px;
+      bottom: 100px;
     }
   }
 </style>
@@ -120,7 +120,7 @@
   btn.setAttribute("aria-label", "Open AI Tutor");
 
   // Learning-themed graduation cap icon
-  btn.innerHTML = '<svg viewBox="0 0 24 24" width="28" height="28" fill="currentColor" aria-hidden="true"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>';
+  btn.innerHTML = '<svg viewBox="0 0 24 24" width="32" height="32" fill="currentColor" aria-hidden="true"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>';
 
   const panel = document.createElement("div");
   panel.className = "ce-chat-panel";
