@@ -16,7 +16,9 @@ from utils.db import (
     save_message,
     flag_content,
     get_all_conversations,
-    get_student_stats
+    get_student_stats,
+    check_rate_limit_mysql,
+    create_rate_limits_table
 )
 from utils.gemini_client import get_tutor_response, check_content_safety
 
@@ -31,22 +33,35 @@ app.config['JWT_SECRET'] = os.getenv('JWT_SECRET')
 allowed_origins = os.getenv('ALLOWED_ORIGINS', '*').split(',')
 CORS(app, origins=allowed_origins, supports_credentials=True)
 
-# Rate limiting (consider using Redis in production)
+# Rate limiting - hybrid approach (in-memory + MySQL)
 request_counts = defaultdict(list)
 
 def check_rate_limit(student_id, window_seconds=60, max_requests=5):
     """
-    Basic per-student rate limiter.
+    Hybrid rate limiter: tries MySQL first, falls back to in-memory
     Limits to max_requests per window_seconds.
     """
+    # Try MySQL-based rate limiting first (persistent)
+    try:
+        is_allowed, remaining = check_rate_limit_mysql(student_id, window_seconds, max_requests)
+        if is_allowed:
+            print(f"🚦 MySQL Rate check for {student_id}: {max_requests - remaining}/{max_requests} requests in last {window_seconds}s")
+            return True
+        else:
+            print(f"🚦 MySQL Rate limit hit for {student_id}")
+            return False
+    except Exception as e:
+        print(f"⚠️ MySQL rate limiting failed, falling back to in-memory: {e}")
+    
+    # Fallback to in-memory rate limiting
     now = time.time()
-    request_times = request_counts[student_id].copy()  # Make a copy to avoid reference issues
+    request_times = request_counts[student_id].copy()
     # remove old entries
     request_times = [t for t in request_times if now - t < window_seconds]
     request_times.append(now)
     request_counts[student_id] = request_times
 
-    print(f"🚦 Rate check for {student_id}: {len(request_times)}/{max_requests} requests in last {window_seconds}s")
+    print(f"🚦 In-memory Rate check for {student_id}: {len(request_times)}/{max_requests} requests in last {window_seconds}s")
     return len(request_times) <= max_requests
 
 def generate_jwt_token(student_id, email, name):
@@ -173,8 +188,8 @@ def chat():
         email = request.student_email
         name = request.student_name
         
-        # Rate limiting - very strict for testing
-        max_req = int(os.getenv("MAX_REQUESTS_PER_MINUTE", 2))  # Very low for testing
+        # Rate limiting - production settings
+        max_req = int(os.getenv("MAX_REQUESTS_PER_MINUTE", 10))  # Reasonable for production
         print(f"🚦 Checking rate limit for student {student_id}: max {max_req} requests per minute")
         if not check_rate_limit(student_id, 60, max_req):
             print(f"🚦 Rate limit hit for student {student_id}")
@@ -184,17 +199,18 @@ def chat():
 
         
         # Content safety check
-        is_safe, safety_reason = check_content_safety(message)
+        is_safe, safety_reason, severity = check_content_safety(message)
         
         # Save student message
         start_time = time.time()
         message_id = save_message(student_id, 'student', message, session_id=session_id)
 
         if not is_safe:
-            print(f"⚠️ Content flagged: {safety_reason}")
-            flag_content(student_id, message_id, message, safety_reason)
+            print(f"⚠️ Content flagged: {safety_reason} (Severity: {severity})")
+            flag_content(student_id, message_id, message, f"{safety_reason} (Severity: {severity})")
 
-            if "critical safety concern" in safety_reason.lower():
+            # Handle different severity levels with appropriate responses
+            if severity == "critical":
                 safe_response = (
                     "I'm really concerned about what you've shared. Your safety is the most important thing.\n\n"
                     "Please talk to a trusted adult right away — a parent, teacher, or school counselor.\n"
@@ -204,18 +220,23 @@ def chat():
                     "You don't have to face difficult feelings alone. There are people who care and want to help. 💙"
                 )
 
-            elif any(keyword in safety_reason.lower() for keyword in ["violence", "hate", "harassment", "bullying"]):
+            elif severity == "high":
                 safe_response = (
                     "I understand you're feeling strong emotions right now. "
                     "It's okay to feel frustrated, but let's try to keep things respectful and positive. "
-                    "Instead of focusing on hate or harm, how about we talk about something educational or inspiring? 🌱 "
+                    "Instead of focusing on negative thoughts, how about we talk about something educational or inspiring? 🌱 "
                     "Maybe we can explore a topic you're curious about today? 🎓"
                 )
 
-            else:
+            elif severity == "medium":
                 safe_response = (
                     "I'm here to help with your learning! Let's keep our conversation positive and educational. "
                     "What subject or topic interests you most today? 🎓"
+                )
+
+            else:  # low severity
+                safe_response = (
+                    "Let's keep our conversation focused on learning! What would you like to explore today? 🌟"
                 )
 
             save_message(student_id, 'tutor', safe_response, session_id=session_id)
@@ -457,6 +478,10 @@ def home():
     return render_template("chat.html")
 
 if __name__ == "__main__":
+    # Initialize database tables
+    print("🔧 Initializing database tables...")
+    create_rate_limits_table()
+    
     port = int(os.getenv("PORT", 5000))
     app.run(
         host="0.0.0.0",

@@ -40,11 +40,20 @@ Key principles:
 - Make connections between different subjects when relevant
 
 FORMATTING RULES:
-- Use **bold** for emphasis, not quotes
-- For lists, use simple bullet points or numbered items without quotes
+- Use **bold** for emphasis and key concepts
+- For lists, use bullet points with • symbol (not * or -)
+- Use numbered lists (1. 2. 3.) for step-by-step instructions
 - Don't wrap questions in quotation marks
 - Use clear, direct language
 - Break up long responses with line breaks for readability
+- Use *italics* for emphasis on specific words
+- Use `code` formatting for technical terms or examples
+
+RESPONSE STRUCTURE:
+- Start with enthusiasm and connection
+- Provide clear, actionable information
+- End with an engaging question or next step
+- Keep formatting clean and readable
 
 Remember: You're not just answering questions—you're helping students discover 
 their unique genius and build confidence in their learning journey.
@@ -138,49 +147,151 @@ def get_tutor_response(student_message, conversation_history=None, student_age=N
 
 def check_content_safety(message):
     """
-    Enhanced content safety check
-    Returns: (is_safe: bool, reason: str)
+    Comprehensive content safety check for educational environment
+    Returns: (is_safe: bool, reason: str, severity: str)
     """
-    message_lower = message.lower()
-
-    # Critical self-harm
-    critical_keywords = [
-        'kill myself', 'hurt myself', 'end my life', 'suicide', 
-        'want to die', 'better off dead', 'self harm', 'cut myself',
-        'harm myself', 'take my life'
+    import re
+    
+    message_lower = message.lower().strip()
+    original_message = message.strip()
+    
+    # Skip empty or very short messages
+    if len(message_lower) < 2:
+        return True, "OK", "low"
+    
+    # Check for message length (prevent spam)
+    if len(message) > 2000:
+        return False, "Message too long", "medium"
+    
+    # 1. CRITICAL SAFETY CONCERNS (Immediate intervention needed)
+    critical_patterns = [
+        r'\b(kill\s+myself|hurt\s+myself|end\s+my\s+life|suicide|want\s+to\s+die|better\s+off\s+dead|self\s*harm|cut\s+myself|harm\s+myself|take\s+my\s+life)\b',
+        r'\b(planning\s+to\s+die|going\s+to\s+kill\s+myself|ending\s+it\s+all|not\s+worth\s+living)\b',
+        r'\b(overdose|poison\s+myself|jump\s+off|hang\s+myself)\b'
     ]
-    for keyword in critical_keywords:
-        if keyword in message_lower:
-            return False, f"Critical safety concern: {keyword}"
-
-    # Violence
-    violence_keywords = ['kill someone', 'hurt someone', 'shoot', 'stab', 'attack', 'bomb', 'weapon', 'gun', 'knife', 'violence']
-    for keyword in violence_keywords:
-        if keyword in message_lower:
-            return False, f"Violence-related content: {keyword}"
-
-    # Hate / discrimination
-    hate_keywords = ["hate", "racist", "sexist", "discriminate", "kill all", "destroy"]
-    group_keywords = ["people", "group", "religion", "race", "gender", "community"]
-    if any(h in message_lower for h in hate_keywords) and any(g in message_lower for g in group_keywords):
-        return False, "Hate speech or discrimination detected"
-
-    # Drugs
-    drug_keywords = ['buy drugs', 'sell drugs', 'get high', 'marijuana', 'cocaine', 'heroin', 'meth']
-    for keyword in drug_keywords:
-        if keyword in message_lower:
-            return False, f"Drug-related content: {keyword}"
-
-    # Inappropriate
-    inappropriate_keywords = ['porn', 'sex', 'nude', 'naked']
-    for keyword in inappropriate_keywords:
-        if keyword in message_lower:
-            return False, f"Inappropriate content: {keyword}"
-
-    # Excessive profanity
-    profanity_words = ['fuck', 'shit', 'damn', 'hell', 'ass', 'bitch', 'bastard', 'crap']
+    
+    for pattern in critical_patterns:
+        if re.search(pattern, message_lower):
+            return False, f"Critical safety concern detected", "critical"
+    
+    # 2. VIOLENCE & THREATS (High priority)
+    violence_patterns = [
+        r'\b(kill\s+someone|hurt\s+someone|shoot\s+someone|stab\s+someone|attack\s+someone|bomb\s+someone)\b',
+        r'\b(threaten\s+to\s+kill|going\s+to\s+shoot|planning\s+to\s+hurt|revenge\s+violence)\b',
+        r'\b(weapon|gun|knife|bomb|explosive|poison)\b.*\b(school|teacher|student|classmate)\b',
+        r'\b(violence|fight|beat\s+up|punch|hit)\b.*\b(someone|people|them)\b'
+    ]
+    
+    for pattern in violence_patterns:
+        if re.search(pattern, message_lower):
+            return False, f"Violence or threat detected", "high"
+    
+    # 3. HATE SPEECH & DISCRIMINATION
+    hate_patterns = [
+        r'\b(hate|despise|loathe)\b.*\b(people|group|religion|race|gender|community|minority)\b',
+        r'\b(racist|sexist|homophobic|transphobic|discriminate)\b',
+        r'\b(kill\s+all|destroy\s+all|eliminate\s+all)\b.*\b(people|group|race|religion)\b',
+        r'\b(inferior|superior)\b.*\b(race|people|group)\b',
+        r'\b(slur|insult)\b.*\b(racial|ethnic|religious)\b'
+    ]
+    
+    for pattern in hate_patterns:
+        if re.search(pattern, message_lower):
+            return False, f"Hate speech or discrimination detected", "high"
+    
+    # 4. DRUGS & SUBSTANCE ABUSE
+    drug_patterns = [
+        r'\b(buy\s+drugs|sell\s+drugs|get\s+high|smoke\s+weed|do\s+drugs)\b',
+        r'\b(marijuana|cocaine|heroin|meth|ecstasy|lsd|pills)\b.*\b(buy|sell|use|take)\b',
+        r'\b(overdose|drug\s+dealer|drug\s+dealing)\b',
+        r'\b(alcohol|beer|wine|drunk|drinking)\b.*\b(underage|minor|teen)\b'
+    ]
+    
+    for pattern in drug_patterns:
+        if re.search(pattern, message_lower):
+            return False, f"Drug-related content detected", "medium"
+    
+    # 5. INAPPROPRIATE SEXUAL CONTENT
+    sexual_patterns = [
+        r'\b(porn|pornography|nude|naked|sex|sexual)\b.*\b(video|photo|image|picture)\b',
+        r'\b(sexting|nude\s+photo|sexual\s+content)\b',
+        r'\b(inappropriate\s+relationship|adult\s+content)\b'
+    ]
+    
+    for pattern in sexual_patterns:
+        if re.search(pattern, message_lower):
+            return False, f"Inappropriate sexual content detected", "high"
+    
+    # 6. ACADEMIC DISHONESTY
+    academic_patterns = [
+        r'\b(cheat\s+on\s+test|copy\s+homework|plagiarize|steal\s+answers)\b',
+        r'\b(essay\s+service|homework\s+help\s+for\s+money|buy\s+essay)\b',
+        r'\b(cheating\s+website|test\s+answers\s+online)\b',
+        r'\b(help\s+me\s+cheat|let\s+me\s+cheat|cheat\s+on\s+this)\b'
+    ]
+    
+    for pattern in academic_patterns:
+        if re.search(pattern, message_lower):
+            return False, f"Academic dishonesty detected", "medium"
+    
+    # 7. PERSONAL INFORMATION SHARING
+    personal_info_patterns = [
+        r'\b(phone\s+number|address|home\s+address|social\s+security)\b',
+        r'\b(credit\s+card|bank\s+account|password|login)\b',
+        r'\b(personal\s+information|private\s+details)\b.*\b(share|give|tell)\b'
+    ]
+    
+    for pattern in personal_info_patterns:
+        if re.search(pattern, message_lower):
+            return False, f"Personal information sharing detected", "medium"
+    
+    # 8. CYBERBULLYING & HARASSMENT
+    bullying_patterns = [
+        r'\b(bully|harass|intimidate|threaten)\b.*\b(someone|student|classmate)\b',
+        r'\b(spread\s+rumors|gossip\s+about|make\s+fun\s+of)\b',
+        r'\b(exclude|ostracize|ignore)\b.*\b(someone|student|classmate)\b'
+    ]
+    
+    for pattern in bullying_patterns:
+        if re.search(pattern, message_lower):
+            return False, f"Cyberbullying or harassment detected", "high"
+    
+    # 9. EXCESSIVE PROFANITY
+    profanity_words = [
+        'fuck', 'shit', 'damn', 'hell', 'ass', 'bitch', 'bastard', 'crap',
+        'piss', 'dick', 'pussy', 'whore', 'slut', 'fag', 'retard'
+    ]
+    
     profanity_count = sum(1 for word in profanity_words if word in message_lower)
-    if profanity_count > 3:
-        return False, "Excessive profanity"
-
-    return True, "OK"
+    if profanity_count >= 2:  # Changed from > 2 to >= 2
+        return False, f"Excessive profanity detected ({profanity_count} instances)", "medium"
+    
+    # 10. SPAM & REPETITIVE CONTENT
+    if len(set(message_lower.split())) < 3 and len(message_lower) > 20:
+        return False, "Repetitive or spam-like content", "low"
+    
+    # 11. OFF-TOPIC/INAPPROPRIATE FOR EDUCATIONAL SETTING
+    off_topic_patterns = [
+        r'\b(gambling|casino|betting|lottery)\b',
+        r'\b(illegal\s+activities|criminal\s+behavior)\b',
+        r'\b(adult\s+content|mature\s+content)\b'
+    ]
+    
+    for pattern in off_topic_patterns:
+        if re.search(pattern, message_lower):
+            return False, f"Content inappropriate for educational setting", "medium"
+    
+    # 12. CHECK FOR SUSPICIOUS PATTERNS
+    # Multiple question marks (potential spam)
+    if message.count('?') > 5:
+        return False, "Excessive question marks detected", "low"
+    
+    # All caps (potential shouting/aggression)
+    if len(message) > 10 and message.isupper():
+        return False, "Excessive capitalization detected", "low"
+    
+    # Repeated characters (potential spam)
+    if re.search(r'(.)\1{4,}', message):
+        return False, "Repeated characters detected", "low"
+    
+    return True, "OK", "low"

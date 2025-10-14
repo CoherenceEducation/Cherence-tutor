@@ -356,3 +356,78 @@ def cleanup_old_sessions(days=30):
     finally:
         cursor.close()
         conn.close()
+
+def check_rate_limit_mysql(student_id, window_seconds=60, max_requests=5):
+    """
+    MySQL-based rate limiting that persists across app restarts
+    Returns: (is_allowed: bool, remaining_requests: int)
+    """
+    conn = get_db_connection()
+    if not conn:
+        print("⚠️ Database not available - allowing request")
+        return True, max_requests
+    
+    cursor = conn.cursor()
+    try:
+        # Clean up old rate limit entries
+        cursor.execute("""
+            DELETE FROM rate_limits 
+            WHERE created_at < DATE_SUB(NOW(), INTERVAL %s SECOND)
+        """, (window_seconds,))
+        
+        # Count current requests in window
+        cursor.execute("""
+            SELECT COUNT(*) as count 
+            FROM rate_limits 
+            WHERE student_id = %s AND created_at >= DATE_SUB(NOW(), INTERVAL %s SECOND)
+        """, (student_id, window_seconds))
+        
+        current_count = cursor.fetchone()[0]
+        
+        if current_count >= max_requests:
+            conn.commit()
+            return False, 0
+        
+        # Add current request
+        cursor.execute("""
+            INSERT INTO rate_limits (student_id, created_at) 
+            VALUES (%s, NOW())
+        """, (student_id,))
+        
+        conn.commit()
+        remaining = max_requests - current_count - 1
+        return True, remaining
+        
+    except Error as e:
+        print(f"Error checking rate limit: {e}")
+        conn.rollback()
+        return True, max_requests  # Allow on error
+    finally:
+        cursor.close()
+        conn.close()
+
+def create_rate_limits_table():
+    """Create rate_limits table if it doesn't exist"""
+    conn = get_db_connection()
+    if not conn:
+        return False
+    
+    cursor = conn.cursor()
+    try:
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS rate_limits (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                student_id VARCHAR(255) NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                INDEX idx_student_time (student_id, created_at)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+        """)
+        conn.commit()
+        print("✅ Rate limits table created/verified")
+        return True
+    except Error as e:
+        print(f"Error creating rate_limits table: {e}")
+        return False
+    finally:
+        cursor.close()
+        conn.close()

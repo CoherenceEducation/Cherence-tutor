@@ -271,6 +271,14 @@
             color: #666;
         }
         
+        .message-content code {
+            background: rgba(247, 181, 56, 0.1);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+        }
+        
         .message-content ul, .message-content ol {
             margin: 8px 0;
             padding-left: 20px;
@@ -278,6 +286,15 @@
         
         .message-content li {
             margin: 4px 0;
+        }
+        
+        /* Better bullet point styling */
+        .message-content {
+            line-height: 1.6;
+        }
+        
+        .message-content br + br {
+            margin-top: 8px;
         }
     </style>
 </head>
@@ -400,13 +417,23 @@ What would you like to learn about today? 🌟`;
             const contentDiv = document.createElement('div');
             contentDiv.className = 'message-content';
             
-            // Clean up text formatting - remove quotes around questions and improve formatting
+            // Enhanced text formatting with proper markdown handling
             let cleanText = text
-                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') // Convert **bold** to <strong>
-                .replace(/\n\n/g, '<br><br>') // Convert double newlines to <br>
-                .replace(/\n/g, '<br>') // Convert single newlines to <br>
-                .replace(/^\d+\.\s*\*\*(.*?)\*\*/gm, '<strong>$1</strong>') // Clean numbered lists
-                .replace(/^\d+\.\s*(.*?)$/gm, '$1'); // Remove numbers from lists
+                // Handle bold text
+                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                // Handle italic text
+                .replace(/\*(.*?)\*/g, '<em>$1</em>')
+                // Handle bullet points (both * and -)
+                .replace(/^\s*[\*\-]\s+(.+)$/gm, '• $1')
+                // Handle numbered lists
+                .replace(/^\s*\d+\.\s+(.+)$/gm, '$1')
+                // Handle line breaks - preserve paragraph structure
+                .replace(/\n\n/g, '<br><br>')
+                .replace(/\n/g, '<br>')
+                // Clean up any remaining markdown artifacts
+                .replace(/^\s*[\*\-]\s*/gm, '• ')
+                // Handle code blocks (simple)
+                .replace(/`([^`]+)`/g, '<code>$1</code>');
             
             contentDiv.innerHTML = cleanText;
             
