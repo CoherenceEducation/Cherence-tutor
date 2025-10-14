@@ -2,27 +2,27 @@
 <style>
   /* Floating launcher button */
   .ce-chat-launcher{
-    position:fixed; right:22px; bottom:22px; z-index:9999;
-    width:56px; height:56px; border-radius:999px; border:none;
-    box-shadow:0 10px 25px rgba(0,0,0,.18);
-    background:#1f6fff; color:#fff; display:flex; align-items:center; justify-content:center;
-    cursor:pointer; transition:transform .15s ease, box-shadow .15s ease, background .2s;
+    position:fixed; right:24px; bottom:120px; z-index:9999;
+    width:64px; height:64px; border-radius:999px; border:2px solid #f7b538;
+    box-shadow:0 8px 25px rgba(2, 48, 71, 0.25);
+    background:linear-gradient(135deg, #023047 0%, #f7b538 100%); 
+    color:#fff; display:flex; align-items:center; justify-content:center;
+    cursor:pointer; transition:all .3s ease;
   }
   .ce-chat-launcher:hover{ 
-    transform:translateY(-1px); 
-    box-shadow:0 14px 30px rgba(0,0,0,.22); 
-    background:#1156ef;
+    transform:translateY(-2px) scale(1.05); 
+    box-shadow:0 12px 35px rgba(2, 48, 71, 0.35); 
+    border-color: #023047;
   }
 
   /* Slide-up panel (drawer) - positioned to avoid footer */
   .ce-chat-panel{
-    position:fixed; right:24px; bottom:90px; z-index:9999;
-    width: min(420px, 92vw); height: min(600px, 70vh);
-    border-radius:16px; overflow:hidden; background:#fff;
-    box-shadow:0 18px 48px rgba(0,0,0,.28);
-    transform: translateY(18px); opacity:0; pointer-events:none;
-    transition: transform .2s ease, opacity .2s ease;
-    border: 1px solid #e1e5e9;
+    position:fixed; right:24px; bottom:200px; z-index:9999;
+    width: min(400px, 92vw); height: min(580px, 70vh);
+    border-radius:24px; overflow:hidden; background:#fff;
+    box-shadow:0 20px 60px rgba(2, 48, 71, 0.3), 0 0 0 1px rgba(247, 181, 56, 0.2);
+    transform: translateY(20px); opacity:0; pointer-events:none;
+    transition: transform .3s ease, opacity .3s ease;
   }
   .ce-chat-panel.open{ 
     transform: translateY(0); 
@@ -30,31 +30,51 @@
     pointer-events:auto; 
   }
 
-  /* Header with LearnWorlds color scheme */
+  /* Header with brand color scheme */
   .ce-chat-header{
-    height:48px; background:linear-gradient(135deg,#1f6fff 0%, #1156ef 100%);
+    height:64px; background:linear-gradient(135deg,#023047 0%, #f7b538 100%);
     color:#fff; display:flex; align-items:center; justify-content:space-between;
-    padding:0 16px; font-weight:600; border-bottom: 1px solid rgba(255,255,255,0.1);
+    padding:0 24px; font-weight:600; border-bottom: none;
+    border-radius: 24px 24px 0 0;
+    position: relative;
+  }
+  .ce-chat-header::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
   }
   .ce-chat-header h1 {
-    font-size: 18px; margin: 0; display: flex; align-items: center; gap: 8px;
+    font-size: 18px; margin: 0; display: flex; align-items: center; gap: 12px;
+    text-shadow: 0 1px 3px rgba(0,0,0,0.2);
   }
   .ce-chat-close{ 
-    background:transparent; border:none; color:#fff; cursor:pointer; 
-    font-size:18px; padding:4px; border-radius:4px; transition: background-color 0.2s;
+    background:rgba(255,255,255,0.15); border:1px solid rgba(255,255,255,0.2); 
+    color:#fff; cursor:pointer; font-size:14px; padding:8px 10px; 
+    border-radius:12px; transition:all 0.2s ease; font-weight:500;
+    width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;
   }
-  .ce-chat-close:hover { background: rgba(255,255,255,0.1); }
+  .ce-chat-close:hover { 
+    background:rgba(255,255,255,0.25); 
+    border-color:rgba(255,255,255,0.4); 
+    transform:scale(1.1); 
+  }
 
   /* Iframe area */
-  .ce-chat-frame{ width:100%; height:calc(100% - 48px); border:0; }
+  .ce-chat-frame{ width:100%; height:calc(100% - 64px); border:0; }
 
   /* Enhanced toast loader */
   .ce-chat-toast{
-    position:fixed; right:90px; bottom:34px; z-index:9999; 
-    background:#1f6fff; color:#fff; padding:8px 12px; border-radius:8px; 
-    font-size:12px; opacity:0; pointer-events:none; font-weight: 500;
-    transform:translateY(8px); transition:all .18s ease;
-    box-shadow: 0 4px 12px rgba(31, 111, 255, 0.3);
+    position:fixed; right:90px; bottom:190px; z-index:9999; 
+    background:linear-gradient(135deg, #023047 0%, #f7b538 100%); 
+    color:#fff; padding:10px 14px; border-radius:12px; 
+    font-size:12px; opacity:0; pointer-events:none; font-weight: 600;
+    transform:translateY(8px); transition:all .3s ease;
+    box-shadow: 0 4px 15px rgba(2, 48, 71, 0.3);
+    border: 1px solid rgba(255,255,255,0.2);
   }
   .ce-chat-toast.show{ opacity:.95; transform:translateY(0); }
 
@@ -65,10 +85,14 @@
       height: min(70vh, 600px);
       right: 24px;
       left: 24px;
+      bottom: 120px;
     }
     .ce-chat-launcher {
       right: 20px;
-      bottom: 20px;
+      bottom: 100px;
+    }
+    .ce-chat-toast {
+      bottom: 180px;
     }
   }
 </style>
@@ -95,8 +119,8 @@
   btn.className = "ce-chat-launcher";
   btn.setAttribute("aria-label", "Open AI Tutor");
 
-  // Enhanced robot SVG icon
-  btn.innerHTML = '<svg viewBox="0 0 24 24" width="26" height="26" fill="currentColor" aria-hidden="true"><path d="M12 2a1 1 0 0 1 1 1v1.06A7.002 7.002 0 0 1 19 11v5a4 4 0 0 1-4 4H9a4 4 0 0 1-4-4v-5a7.002 7.002 0 0 1 6-6.94V3a1 1 0 0 1 1-1zm-3.5 9a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3zm7 0a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3zM8 17h8a1 1 0 1 1 0 2H8a1 1 0 1 1 0-2z"/></svg>';
+  // Learning-themed graduation cap icon
+  btn.innerHTML = '<svg viewBox="0 0 24 24" width="28" height="28" fill="currentColor" aria-hidden="true"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>';
 
   const panel = document.createElement("div");
   panel.className = "ce-chat-panel";
