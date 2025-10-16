@@ -426,9 +426,24 @@ def chat_ui():
     return send_from_directory('static', 'chat.html')
 
 @app.route('/admin', methods=['GET'])
-@require_admin
 def admin_dashboard():
-    """Admin dashboard - serve the admin interface"""
+    """Serve admin UI if a valid admin token is in the query string"""
+    token = request.args.get('token')
+    if not token:
+        return jsonify({"error": "No token provided"}), 401
+
+    payload = verify_jwt_token(token)
+    if not payload:
+        return jsonify({"error": "Invalid or expired token"}), 401
+
+    if payload.get('role') != 'admin' or not is_admin_email(payload.get('email', '')):
+        return jsonify({"error": "Admin access required"}), 403
+
+    # If you want: set a short-lived cookie for subsequent XHR from this origin
+    # resp = make_response(send_from_directory('static', 'admin.html'))
+    # resp.set_cookie('admin_session', token, max_age=3600, secure=True, samesite='None')
+    # return resp
+
     return send_from_directory('static', 'admin.html')
 
 
