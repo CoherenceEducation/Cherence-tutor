@@ -624,6 +624,17 @@ def get_platform_analytics():
 def get_comprehensive_analytics():
     """Get comprehensive analytics including engagement, topics, sentiment, and progress"""
     conn = get_db_connection()
+    if not conn:
+        print("⚠️ Database not available - returning empty analytics")
+        return {
+            'engagement': {},
+            'topics': {},
+            'sentiment': {},
+            'progress': {},
+            'academic_focus': {},
+            'curiosity': {}
+        }
+    
     cursor = conn.cursor(dictionary=True)
     try:
         # Engagement Metrics
@@ -654,7 +665,16 @@ def get_comprehensive_analytics():
         }
     except Error as e:
         print(f"Error fetching comprehensive analytics: {e}")
-        return {}
+        import traceback
+        traceback.print_exc()
+        return {
+            'engagement': {},
+            'topics': {},
+            'sentiment': {},
+            'progress': {},
+            'academic_focus': {},
+            'curiosity': {}
+        }
     finally:
         cursor.close()
         conn.close()
@@ -668,7 +688,8 @@ def get_engagement_metrics(cursor):
             FROM conversation_history 
             WHERE session_id IS NOT NULL
         """)
-        total_chats = cursor.fetchone()['total_chats']
+        result = cursor.fetchone()
+        total_chats = result['total_chats'] if result else 0
         
         # Average messages per session
         cursor.execute("""
@@ -680,7 +701,8 @@ def get_engagement_metrics(cursor):
                 GROUP BY session_id
             ) as session_counts
         """)
-        avg_messages_per_session = cursor.fetchone()['avg_messages_per_session'] or 0
+        result = cursor.fetchone()
+        avg_messages_per_session = result['avg_messages_per_session'] if result and result['avg_messages_per_session'] else 0
         
         # Average session duration (estimated from first to last message)
         cursor.execute("""
@@ -694,7 +716,8 @@ def get_engagement_metrics(cursor):
                 HAVING COUNT(*) > 1
             ) as session_durations
         """)
-        avg_session_duration = cursor.fetchone()['avg_session_duration'] or 0
+        result = cursor.fetchone()
+        avg_session_duration = result['avg_session_duration'] if result and result['avg_session_duration'] else 0
         
         # Unique students with activity
         cursor.execute("""
@@ -702,7 +725,8 @@ def get_engagement_metrics(cursor):
             FROM conversation_history 
             WHERE created_at >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)
         """)
-        unique_active_students = cursor.fetchone()['unique_active_students']
+        result = cursor.fetchone()
+        unique_active_students = result['unique_active_students'] if result else 0
         
         return {
             'total_chats': total_chats,
@@ -712,7 +736,12 @@ def get_engagement_metrics(cursor):
         }
     except Error as e:
         print(f"Error fetching engagement metrics: {e}")
-        return {}
+        return {
+            'total_chats': 0,
+            'avg_messages_per_session': 0,
+            'avg_session_duration_minutes': 0,
+            'unique_active_students_7d': 0
+        }
 
 def get_topic_analysis(cursor):
     """Analyze topics and subjects most commonly asked by students"""
@@ -768,7 +797,10 @@ def get_topic_analysis(cursor):
         }
     except Error as e:
         print(f"Error fetching topic analysis: {e}")
-        return {}
+        return {
+            'top_topics': [],
+            'total_topics_identified': 0
+        }
 
 def get_sentiment_analysis(cursor):
     """Analyze sentiment trends in student messages"""
@@ -824,7 +856,11 @@ def get_sentiment_analysis(cursor):
         }
     except Error as e:
         print(f"Error fetching sentiment analysis: {e}")
-        return {}
+        return {
+            'sentiment_distribution': {'positive': 0, 'negative': 0, 'neutral': 0},
+            'total_analyzed': 0,
+            'daily_trends': {}
+        }
 
 def get_progress_indicators(cursor):
     """Track progress indicators like question depth and sentiment positivity over time"""
@@ -872,7 +908,11 @@ def get_progress_indicators(cursor):
         }
     except Error as e:
         print(f"Error fetching progress indicators: {e}")
-        return {}
+        return {
+            'students_with_growth': 0,
+            'total_tracked_students': 0,
+            'growth_percentage': 0
+        }
 
 def get_academic_focus(cursor):
     """Get top 5 subjects/topics asked about"""
@@ -926,7 +966,10 @@ def get_academic_focus(cursor):
         }
     except Error as e:
         print(f"Error fetching academic focus: {e}")
-        return {}
+        return {
+            'top_5_subjects': [],
+            'total_subjects_identified': 0
+        }
 
 def get_curiosity_metrics(cursor):
     """Analyze curiosity and creativity: % open-ended vs factual questions"""
@@ -968,4 +1011,10 @@ def get_curiosity_metrics(cursor):
         }
     except Error as e:
         print(f"Error fetching curiosity metrics: {e}")
-        return {}
+        return {
+            'total_questions_analyzed': 0,
+            'open_ended_percentage': 0,
+            'factual_percentage': 0,
+            'open_ended_count': 0,
+            'factual_count': 0
+        }

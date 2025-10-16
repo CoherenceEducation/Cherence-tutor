@@ -849,14 +849,33 @@
                     }
                 });
                 
-                if (!response.ok) throw new Error('Failed to load comprehensive analytics');
+                if (!response.ok) {
+                    console.warn('Comprehensive analytics endpoint failed, showing empty data');
+                    displayComprehensiveAnalytics({
+                        engagement: {},
+                        topics: {},
+                        sentiment: {},
+                        progress: {},
+                        academic_focus: {},
+                        curiosity: {}
+                    });
+                    return;
+                }
                 
                 const analytics = await response.json();
                 displayComprehensiveAnalytics(analytics);
                 
             } catch (error) {
                 console.error('Error loading comprehensive analytics:', error);
-                // Don't show error for this as it's supplementary data
+                // Show empty data instead of loading indicators
+                displayComprehensiveAnalytics({
+                    engagement: {},
+                    topics: {},
+                    sentiment: {},
+                    progress: {},
+                    academic_focus: {},
+                    curiosity: {}
+                });
             }
         }
         
