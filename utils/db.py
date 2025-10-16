@@ -431,3 +431,192 @@ def create_rate_limits_table():
     finally:
         cursor.close()
         conn.close()
+
+def create_admins_table():
+    """Create admins table if it doesn't exist"""
+    conn = get_db_connection()
+    if not conn:
+        return False
+    
+    cursor = conn.cursor()
+    try:
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS admins (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                admin_id VARCHAR(255) NOT NULL UNIQUE,
+                email VARCHAR(255) NOT NULL UNIQUE,
+                name VARCHAR(255),
+                role ENUM('admin', 'super_admin') DEFAULT 'admin',
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                last_active TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                is_active BOOLEAN DEFAULT TRUE,
+                INDEX idx_email (email),
+                INDEX idx_admin_id (admin_id)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+        """)
+        conn.commit()
+        print("✅ Admins table created/verified")
+        return True
+    except Error as e:
+        print(f"Error creating admins table: {e}")
+        return False
+    finally:
+        cursor.close()
+        conn.close()
+
+def ensure_admin_exists(admin_id, email, name=None):
+    """Create or update admin record"""
+    conn = get_db_connection()
+    if not conn:
+        print("⚠️ Database not available - skipping admin creation")
+        return
+    cursor = conn.cursor()
+    try:
+        cursor.execute("""
+            INSERT INTO admins (admin_id, email, name) 
+            VALUES (%s, %s, %s)
+            ON DUPLICATE KEY UPDATE 
+                last_active = CURRENT_TIMESTAMP,
+                name = COALESCE(%s, name),
+                is_active = TRUE
+        """, (admin_id, email, name, name))
+        conn.commit()
+    except Error as e:
+        print(f"Error ensuring admin exists: {e}")
+        conn.rollback()
+    finally:
+        cursor.close()
+        conn.close()
+
+def get_admin_info(admin_id):
+    """Get admin information"""
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    try:
+        cursor.execute("""
+            SELECT * FROM admins 
+            WHERE admin_id = %s AND is_active = TRUE
+        """, (admin_id,))
+        return cursor.fetchone()
+    except Error as e:
+        print(f"Error fetching admin info: {e}")
+        return None
+    finally:
+        cursor.close()
+        conn.close()
+
+def get_all_students(limit=100, offset=0):
+    """Get all students with their details"""
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    try:
+        cursor.execute("""
+            SELECT 
+                s.*,
+                COUNT(c.id) as total_messages,
+                MAX(c.created_at) as last_message_at
+            FROM students s
+            LEFT JOIN conversation_history c ON s.student_id = c.student_id
+            GROUP BY s.student_id
+            ORDER BY s.last_active DESC
+            LIMIT %s OFFSET %s
+        """, (limit, offset))
+        return cursor.fetchall()
+    except Error as e:
+        print(f"Error fetching all students: {e}")
+        return []
+    finally:
+        cursor.close()
+        conn.close()
+
+def get_student_conversations(student_id, limit=50):
+    """Get conversations for a specific student"""
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    try:
+        cursor.execute("""
+            SELECT c.*, s.name, s.email 
+            FROM conversation_history c
+            JOIN students s ON c.student_id = s.student_id
+            WHERE c.student_id = %s
+            ORDER BY c.created_at DESC
+            LIMIT %s
+        """, (student_id, limit))
+        return cursor.fetchall()
+    except Error as e:
+        print(f"Error fetching student conversations: {e}")
+        return []
+    finally:
+        cursor.close()
+        conn.close()
+
+def get_platform_analytics():
+    """Get detailed platform analytics"""
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    try:
+        # Basic stats
+        cursor.execute("SELECT COUNT(*) as total_students FROM students")
+        total_students = cursor.fetchone()['total_students']
+        
+        cursor.execute("SELECT COUNT(*) as total_messages FROM conversation_history")
+        total_messages = cursor.fetchone()['total_messages']
+        
+        # Daily activity
+        cursor.execute("""
+            SELECT DATE(created_at) as date, COUNT(*) as messages
+            FROM conversation_history 
+            WHERE created_at >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)
+            GROUP BY DATE(created_at)
+            ORDER BY date DESC
+        """)
+        daily_activity = cursor.fetchall()
+        
+        # Top active students
+        cursor.execute("""
+            SELECT s.name, s.email, COUNT(c.id) as message_count
+            FROM students s
+            JOIN conversation_history c ON s.student_id = c.student_id
+            WHERE c.created_at >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)
+            GROUP BY s.student_id
+            ORDER BY message_count DESC
+            LIMIT 10
+        """)
+        top_students = cursor.fetchall()
+        
+        # Flagged content stats
+        cursor.execute("""
+            SELECT 
+                COUNT(*) as total_flagged,
+                COUNT(CASE WHEN reviewed = FALSE THEN 1 END) as unreviewed,
+                COUNT(CASE WHEN reviewed = TRUE THEN 1 END) as reviewed
+            FROM flagged_content
+        """)
+        flagged_stats = cursor.fetchone()
+        
+        # Response time analytics
+        cursor.execute("""
+            SELECT 
+                AVG(response_time_ms) as avg_response_time,
+                MIN(response_time_ms) as min_response_time,
+                MAX(response_time_ms) as max_response_time
+            FROM conversation_history 
+            WHERE response_time_ms IS NOT NULL
+            AND created_at >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)
+        """)
+        response_stats = cursor.fetchone()
+        
+        return {
+            'total_students': total_students,
+            'total_messages': total_messages,
+            'daily_activity': daily_activity,
+            'top_students': top_students,
+            'flagged_stats': flagged_stats,
+            'response_stats': response_stats
+        }
+    except Error as e:
+        print(f"Error fetching platform analytics: {e}")
+        return {}
+    finally:
+        cursor.close()
+        conn.close()

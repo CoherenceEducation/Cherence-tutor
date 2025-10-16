@@ -4,10 +4,9 @@ import time
 from datetime import datetime, timedelta
 from functools import wraps
 from dotenv import load_dotenv
-from flask import Flask, request, jsonify, send_from_directory, render_template_string
+from flask import Flask, request, jsonify, send_from_directory, render_template, render_template_string
 from flask_cors import CORS
 from collections import defaultdict
-from flask_cors import CORS
 
 # Import utilities
 from utils.db import (
@@ -18,23 +17,47 @@ from utils.db import (
     get_all_conversations,
     get_student_stats,
     check_rate_limit_mysql,
-    create_rate_limits_table
+    create_rate_limits_table,
+    ensure_admin_exists,
+    get_admin_info,
+    get_all_students,
+    get_student_conversations,
+    get_platform_analytics,
+    create_admins_table
 )
 from utils.gemini_client import get_tutor_response, check_content_safety
 
 load_dotenv()
+
 app = Flask(__name__, static_folder='static', template_folder='static')
-CORS(app)
 app.config['SECRET_KEY'] = os.getenv('FLASK_SECRET_KEY')
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024
 app.config['JWT_SECRET'] = os.getenv('JWT_SECRET')
 
-# Enable CORS for LearnWorlds domain
-allowed_origins = os.getenv('ALLOWED_ORIGINS', '*').split(',')
-CORS(app, origins=allowed_origins, supports_credentials=True)
+# --- CORS (single setup, allow-list based) ---
+# Put your deployed origin(s) in ALLOWED_ORIGINS env, comma-separated.
+# Fallback includes LW + ngrok + example vercel host.
+allowed_origins = [o.strip() for o in os.getenv('ALLOWED_ORIGINS', '').split(',') if o.strip()]
+CORS(app, origins=allowed_origins or [
+    "https://classes.coherenceeducation.org",
+    "https://coherenceeducation.learnworlds.com",
+    "https://df3e8ea9dd4c.ngrok-free.app",
+    "https://coherence-tutor.vercel.app"
+], supports_credentials=True)
+
+# --- Admin email list (ENV-driven, with safe fallback) ---
+ADMIN_EMAILS = {
+    e.strip().lower() for e in os.getenv(
+        'ADMIN_EMAILS',
+        'andrew@coherence.org,mina@coherenceeducation.org,'
+        'support@coherenceeducation.org,evan.senour@gmail.com,'
+        'gavinli.automation@gmail.com'
+    ).split(',') if e.strip()
+}
 
 # Rate limiting - hybrid approach (in-memory + MySQL)
 request_counts = defaultdict(list)
+
 
 def check_rate_limit(student_id, window_seconds=60, max_requests=5):
     """
@@ -64,16 +87,22 @@ def check_rate_limit(student_id, window_seconds=60, max_requests=5):
     print(f"🚦 In-memory Rate check for {student_id}: {len(request_times)}/{max_requests} requests in last {window_seconds}s")
     return len(request_times) <= max_requests
 
-def generate_jwt_token(student_id, email, name):
+def generate_jwt_token(student_id, email, name, role='student'):
     """Generate JWT token for secure authentication"""
     payload = {
         'student_id': student_id,
         'email': email,
         'name': name,
+        'role': role,
         'exp': datetime.utcnow() + timedelta(hours=24),
         'iat': datetime.utcnow()
     }
     return jwt.encode(payload, app.config['JWT_SECRET'], algorithm='HS256')
+
+def is_admin_email(email):
+    """Check if email is in admin list"""
+    return bool(email) and email.lower() in ADMIN_EMAILS
+
 
 def verify_jwt_token(token):
     """Verify and decode JWT token"""
@@ -100,10 +129,38 @@ def require_auth(f):
         if not payload:
             return jsonify({"error": "Invalid or expired token"}), 401
         
-        # Add student info to request context
-        request.student_id = payload['student_id']
-        request.student_email = payload['email']
-        request.student_name = payload.get('name')
+        # Add user info to request context
+        request.user_id = payload['student_id']
+        request.user_email = payload['email']
+        request.user_name = payload.get('name')
+        request.user_role = payload.get('role', 'student')
+        
+        return f(*args, **kwargs)
+    return decorated_function
+
+def require_admin(f):
+    """Decorator to require admin authentication"""
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        token = request.headers.get('Authorization')
+        if not token:
+            return jsonify({"error": "No token provided"}), 401
+        
+        if token.startswith('Bearer '):
+            token = token[7:]
+        
+        payload = verify_jwt_token(token)
+        if not payload:
+            return jsonify({"error": "Invalid or expired token"}), 401
+        
+        # Check if user is admin
+        if payload.get('role') != 'admin' or not is_admin_email(payload['email']):
+            return jsonify({"error": "Admin access required"}), 403
+        
+        # Add admin info to request context
+        request.admin_id = payload['student_id']
+        request.admin_email = payload['email']
+        request.admin_name = payload.get('name')
         
         return f(*args, **kwargs)
     return decorated_function
@@ -136,11 +193,26 @@ def generate_token():
             print("⚠️ Missing required fields")
             return jsonify({"error": "Missing required fields"}), 400
 
-        ensure_student_exists(student_id, email, name)
-        token = generate_jwt_token(student_id, email, name)
+        # Determine if user is admin or student
+        is_admin = is_admin_email(email)
+        role = 'admin' if is_admin else 'student'
+        
+        if is_admin:
+            ensure_admin_exists(student_id, email, name)
+            print(f"🔐 Admin access granted to {email}")
+        else:
+            ensure_student_exists(student_id, email, name)
+            print(f"🎓 Student access granted to {email}")
+        
+        token = generate_jwt_token(student_id, email, name, role)
 
         print("✅ Token generated successfully")
-        return jsonify({"token": token, "expires_in": 86400}), 200
+        return jsonify({
+            "token": token, 
+            "expires_in": 86400,
+            "role": role,
+            "is_admin": is_admin
+        }), 200
 
     except Exception as e:
         print("💥 Exception in /api/auth/token:", str(e))
@@ -183,10 +255,10 @@ def chat():
         if not message:
             return jsonify({"error": "Message is required"}), 400
         
-        # Get authenticated student info from JWT
-        student_id = request.student_id
-        email = request.student_email
-        name = request.student_name
+        # Get authenticated user info from JWT
+        student_id = request.user_id
+        email = request.user_email
+        name = request.user_name
         
         # Rate limiting - production settings
         max_req = int(os.getenv("MAX_REQUESTS_PER_MINUTE", 10))  # Reasonable for production
@@ -282,18 +354,15 @@ def chat():
 def get_history():
     """Get conversation history (JWT protected)"""
     limit = int(request.args.get('limit', 20))
-    student_id = request.student_id
+    student_id = request.user_id
     
     history = get_conversation_history(student_id, limit=limit)
     return jsonify({"history": history}), 200
 
 @app.route('/api/admin/conversations', methods=['GET'])
+@require_admin
 def admin_conversations():
     """Admin: Get all conversations"""
-    admin_key = request.headers.get('X-Admin-Key')
-    if admin_key != os.getenv('ADMIN_SECRET_KEY'):
-        return jsonify({"error": "Unauthorized"}), 401
-    
     limit = int(request.args.get('limit', 100))
     offset = int(request.args.get('offset', 0))
     
@@ -304,25 +373,52 @@ def admin_conversations():
     }), 200
 
 @app.route('/api/admin/flagged', methods=['GET'])
+@require_admin
 def admin_flagged():
     """Admin: Get flagged content"""
-    admin_key = request.headers.get('X-Admin-Key')
-    if admin_key != os.getenv('ADMIN_SECRET_KEY'):
-        return jsonify({"error": "Unauthorized"}), 401
-    
     from utils.db import get_flagged_content
     flagged = get_flagged_content(limit=100)
     return jsonify({"flagged": flagged}), 200
 
 @app.route('/api/admin/stats', methods=['GET'])
+@require_admin
 def admin_stats():
     """Admin: Get platform statistics"""
-    admin_key = request.headers.get('X-Admin-Key')
-    if admin_key != os.getenv('ADMIN_SECRET_KEY'):
-        return jsonify({"error": "Unauthorized"}), 401
-    
     stats = get_student_stats()
     return jsonify(stats), 200
+
+@app.route('/api/admin/students', methods=['GET'])
+@require_admin
+def admin_students():
+    """Admin: Get all students with their details"""
+    limit = int(request.args.get('limit', 100))
+    offset = int(request.args.get('offset', 0))
+    
+    students = get_all_students(limit=limit, offset=offset)
+    return jsonify({
+        "students": students,
+        "count": len(students)
+    }), 200
+
+@app.route('/api/admin/student/<student_id>/conversations', methods=['GET'])
+@require_admin
+def admin_student_conversations(student_id):
+    """Admin: Get conversations for a specific student"""
+    limit = int(request.args.get('limit', 50))
+    
+    conversations = get_student_conversations(student_id, limit=limit)
+    return jsonify({
+        "conversations": conversations,
+        "student_id": student_id,
+        "count": len(conversations)
+    }), 200
+
+@app.route('/api/admin/analytics', methods=['GET'])
+@require_admin
+def admin_analytics():
+    """Admin: Get detailed platform analytics"""
+    analytics = get_platform_analytics()
+    return jsonify(analytics), 200
 
 @app.route('/chat', methods=['GET'])
 def chat_ui():
@@ -330,122 +426,12 @@ def chat_ui():
     return send_from_directory('static', 'chat.html')
 
 @app.route('/admin', methods=['GET'])
+@require_admin
 def admin_dashboard():
-    """Admin dashboard"""
-    admin_key = request.args.get('key')
-    if admin_key != os.getenv('ADMIN_SECRET_KEY'):
-        return "Unauthorized", 401
-    
-    stats = get_student_stats()
-    recent = get_all_conversations(limit=50)
-    from utils.db import get_flagged_content
-    flagged = get_flagged_content(limit=20)
-    
-    html = f"""
-    <!DOCTYPE html>
-    <html>
-    <head>
-        <title>Coherence AI Tutor - Admin</title>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <style>
-            * {{ margin: 0; padding: 0; box-sizing: border-box; }}
-            body {{ 
-                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-                background: #f5f7fa;
-                padding: 20px;
-            }}
-            .header {{
-                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                color: white;
-                padding: 30px;
-                border-radius: 15px;
-                margin-bottom: 30px;
-            }}
-            .stats {{
-                display: grid;
-                grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-                gap: 20px;
-                margin-bottom: 30px;
-            }}
-            .stat-card {{
-                background: white;
-                padding: 25px;
-                border-radius: 15px;
-                box-shadow: 0 4px 15px rgba(0,0,0,0.08);
-            }}
-            .stat-card .number {{
-                font-size: 42px;
-                font-weight: bold;
-                color: #667eea;
-            }}
-            .section {{
-                background: white;
-                padding: 25px;
-                border-radius: 15px;
-                margin-bottom: 20px;
-            }}
-            table {{ width: 100%; border-collapse: collapse; }}
-            th, td {{ padding: 12px; text-align: left; border-bottom: 1px solid #eee; }}
-            .alert {{ background: #fff3cd; border-left: 4px solid #ff6b6b; padding: 15px; margin: 10px 0; }}
-            .flagged {{ background: #fee; }}
-        </style>
-    </head>
-    <body>
-        <div class="header">
-            <h1>🎓 Coherence AI Tutor - Admin</h1>
-        </div>
-        
-        <div class="stats">
-            <div class="stat-card">
-                <h3>Total Students</h3>
-                <div class="number">{stats.get('total_students', 0)}</div>
-            </div>
-            <div class="stat-card">
-                <h3>Total Messages</h3>
-                <div class="number">{stats.get('total_messages', 0)}</div>
-            </div>
-            <div class="stat-card">
-                <h3>Flagged Content</h3>
-                <div class="number" style="color: #ff6b6b;">{len(flagged)}</div>
-            </div>
-            <div class="stat-card">
-                <h3>Active Today</h3>
-                <div class="number">{stats.get('active_today', 0)}</div>
-            </div>
-        </div>
-        
-        {f'''
-        <div class="section">
-            <h2>🚩 Flagged Content (Requires Review)</h2>
-            <table>
-                <tr>
-                    <th>Time</th>
-                    <th>Student</th>
-                    <th>Message</th>
-                    <th>Reason</th>
-                </tr>
-                {''.join([f"<tr class='flagged'><td>{f['flagged_at']}</td><td>{f.get('student_id', 'N/A')}</td><td>{f['message_text'][:100]}</td><td>{f['reason']}</td></tr>" for f in flagged])}
-            </table>
-        </div>
-        ''' if flagged else ''}
-        
-        <div class="section">
-            <h2>Recent Activity</h2>
-            <table>
-                <tr>
-                    <th>Time</th>
-                    <th>Student</th>
-                    <th>Message</th>
-                </tr>
-                {''.join([f"<tr><td>{r['created_at']}</td><td>{r.get('name', 'Unknown')}</td><td>{r['message'][:80]}</td></tr>" for r in recent[:20]])}
-            </table>
-        </div>
-    </body>
-    </html>
-    """
-    return render_template_string(html)
-    
+    """Admin dashboard - serve the admin interface"""
+    return send_from_directory('static', 'admin.html')
+
+
 @app.after_request
 def add_security_headers(resp):
     """Allow LearnWorlds pages to embed the chat iframe."""
@@ -481,6 +467,7 @@ if __name__ == "__main__":
     # Initialize database tables
     print("🔧 Initializing database tables...")
     create_rate_limits_table()
+    create_admins_table()
     
     port = int(os.getenv("PORT", 5000))
     app.run(

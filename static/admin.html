@@ -1,0 +1,749 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Coherence AI Tutor - Admin Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f8fafc;
+            color: #334155;
+            line-height: 1.6;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #023047 0%, #f7b538 100%);
+            color: white;
+            padding: 2rem;
+            box-shadow: 0 4px 20px rgba(2, 48, 71, 0.1);
+        }
+        
+        .header h1 {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+        
+        .header p {
+            opacity: 0.9;
+            font-size: 1.1rem;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        
+        .stat-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            border: 1px solid #e2e8f0;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        }
+        
+        .stat-card h3 {
+            color: #64748b;
+            font-size: 0.875rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 0.5rem;
+        }
+        
+        .stat-card .number {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: #023047;
+            margin-bottom: 0.5rem;
+        }
+        
+        .stat-card .change {
+            font-size: 0.875rem;
+            color: #10b981;
+        }
+        
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            border: 1px solid #e2e8f0;
+            overflow: hidden;
+        }
+        
+        .card-header {
+            padding: 1.5rem;
+            border-bottom: 1px solid #e2e8f0;
+            background: #f8fafc;
+        }
+        
+        .card-header h2 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #023047;
+        }
+        
+        .card-content {
+            padding: 1.5rem;
+        }
+        
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        .table th,
+        .table td {
+            padding: 0.75rem;
+            text-align: left;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        
+        .table th {
+            background: #f8fafc;
+            font-weight: 600;
+            color: #374151;
+            font-size: 0.875rem;
+        }
+        
+        .table tbody tr:hover {
+            background: #f8fafc;
+        }
+        
+        .badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        
+        .badge-success {
+            background: #dcfce7;
+            color: #166534;
+        }
+        
+        .badge-warning {
+            background: #fef3c7;
+            color: #92400e;
+        }
+        
+        .badge-danger {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+        
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            font-size: 0.875rem;
+            font-weight: 500;
+            text-decoration: none;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .btn-primary {
+            background: #023047;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #011a2a;
+        }
+        
+        .btn-secondary {
+            background: #e2e8f0;
+            color: #374151;
+        }
+        
+        .btn-secondary:hover {
+            background: #cbd5e1;
+        }
+        
+        .loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+            color: #64748b;
+        }
+        
+        .error {
+            background: #fee2e2;
+            color: #991b1b;
+            padding: 1rem;
+            border-radius: 6px;
+            margin: 1rem 0;
+        }
+        
+        .search-box {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            font-size: 0.875rem;
+            margin-bottom: 1rem;
+        }
+        
+        .search-box:focus {
+            outline: none;
+            border-color: #023047;
+            box-shadow: 0 0 0 3px rgba(2, 48, 71, 0.1);
+        }
+        
+        .tabs {
+            display: flex;
+            border-bottom: 1px solid #e2e8f0;
+            margin-bottom: 1.5rem;
+        }
+        
+        .tab {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            background: none;
+            cursor: pointer;
+            font-weight: 500;
+            color: #64748b;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s ease;
+        }
+        
+        .tab.active {
+            color: #023047;
+            border-bottom-color: #023047;
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .student-details {
+            background: #f8fafc;
+            padding: 1rem;
+            border-radius: 6px;
+            margin: 1rem 0;
+        }
+        
+        .conversation-item {
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            padding: 1rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .conversation-item .role {
+            font-weight: 600;
+            color: #023047;
+            margin-bottom: 0.5rem;
+        }
+        
+        .conversation-item .message {
+            color: #374151;
+            line-height: 1.5;
+        }
+        
+        .conversation-item .timestamp {
+            font-size: 0.75rem;
+            color: #64748b;
+            margin-top: 0.5rem;
+        }
+        
+        @media (max-width: 768px) {
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .container {
+                padding: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="container">
+            <h1>🎓 Coherence AI Tutor - Admin Dashboard</h1>
+            <p>Comprehensive platform management and analytics</p>
+        </div>
+    </div>
+    
+    <div class="container">
+        <!-- Stats Overview -->
+        <div class="stats-grid" id="statsGrid">
+            <div class="stat-card">
+                <h3>Total Students</h3>
+                <div class="number" id="totalStudents">-</div>
+                <div class="change">Active users</div>
+            </div>
+            <div class="stat-card">
+                <h3>Total Messages</h3>
+                <div class="number" id="totalMessages">-</div>
+                <div class="change">All conversations</div>
+            </div>
+            <div class="stat-card">
+                <h3>Active Today</h3>
+                <div class="number" id="activeToday">-</div>
+                <div class="change">Last 24 hours</div>
+            </div>
+            <div class="stat-card">
+                <h3>Flagged Content</h3>
+                <div class="number" id="flaggedContent">-</div>
+                <div class="change">Requires review</div>
+            </div>
+        </div>
+        
+        <!-- Main Dashboard -->
+        <div class="dashboard-grid">
+            <!-- Students and Conversations -->
+            <div class="card">
+                <div class="card-header">
+                    <h2>Students & Conversations</h2>
+                </div>
+                <div class="card-content">
+                    <div class="tabs">
+                        <button class="tab active" onclick="switchTab('students')">Students</button>
+                        <button class="tab" onclick="switchTab('conversations')">Recent Conversations</button>
+                        <button class="tab" onclick="switchTab('flagged')">Flagged Content</button>
+                    </div>
+                    
+                    <!-- Students Tab -->
+                    <div id="students" class="tab-content active">
+                        <input type="text" class="search-box" placeholder="Search students..." id="studentSearch">
+                        <div class="loading" id="studentsLoading">Loading students...</div>
+                        <div id="studentsList"></div>
+                    </div>
+                    
+                    <!-- Conversations Tab -->
+                    <div id="conversations" class="tab-content">
+                        <div class="loading" id="conversationsLoading">Loading conversations...</div>
+                        <div id="conversationsList"></div>
+                    </div>
+                    
+                    <!-- Flagged Content Tab -->
+                    <div id="flagged" class="tab-content">
+                        <div class="loading" id="flaggedLoading">Loading flagged content...</div>
+                        <div id="flaggedList"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Analytics -->
+            <div class="card">
+                <div class="card-header">
+                    <h2>Platform Analytics</h2>
+                </div>
+                <div class="card-content">
+                    <div class="loading" id="analyticsLoading">Loading analytics...</div>
+                    <div id="analyticsContent"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Configuration
+        const API_URL = window.location.origin;
+        let authToken = null;
+        let currentStudentId = null;
+        
+        // Initialize dashboard
+        async function initializeDashboard() {
+            // Check for admin token in URL or localStorage
+            const urlParams = new URLSearchParams(window.location.search);
+            const urlToken = urlParams.get('token');
+            const savedToken = localStorage.getItem('admin_token');
+            
+            if (urlToken) {
+                authToken = urlToken;
+                localStorage.setItem('admin_token', urlToken);
+                window.history.replaceState({}, document.title, window.location.pathname);
+            } else if (savedToken) {
+                authToken = savedToken;
+            }
+            
+            if (!authToken) {
+                showError('Admin authentication required. Please access through LearnWorlds.');
+                return;
+            }
+            
+            console.log("✅ Admin dashboard initialized");
+            await loadDashboardData();
+        }
+        
+        // Load all dashboard data
+        async function loadDashboardData() {
+            try {
+                await Promise.all([
+                    loadStats(),
+                    loadStudents(),
+                    loadConversations(),
+                    loadFlaggedContent(),
+                    loadAnalytics()
+                ]);
+            } catch (error) {
+                console.error('Error loading dashboard data:', error);
+                showError('Failed to load dashboard data. Please refresh the page.');
+            }
+        }
+        
+        // Load platform statistics
+        async function loadStats() {
+            try {
+                const response = await fetch(`${API_URL}/api/admin/stats`, {
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`
+                    }
+                });
+                
+                if (!response.ok) throw new Error('Failed to load stats');
+                
+                const stats = await response.json();
+                
+                document.getElementById('totalStudents').textContent = stats.total_students || 0;
+                document.getElementById('totalMessages').textContent = stats.total_messages || 0;
+                document.getElementById('activeToday').textContent = stats.active_today || 0;
+                document.getElementById('flaggedContent').textContent = stats.flagged_count || 0;
+                
+            } catch (error) {
+                console.error('Error loading stats:', error);
+            }
+        }
+        
+        // Load students list
+        async function loadStudents() {
+            try {
+                const response = await fetch(`${API_URL}/api/admin/students?limit=50`, {
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`
+                    }
+                });
+                
+                if (!response.ok) throw new Error('Failed to load students');
+                
+                const data = await response.json();
+                displayStudents(data.students);
+                
+            } catch (error) {
+                console.error('Error loading students:', error);
+                document.getElementById('studentsLoading').innerHTML = '<div class="error">Failed to load students</div>';
+            }
+        }
+        
+        // Display students
+        function displayStudents(students) {
+            const container = document.getElementById('studentsList');
+            const loading = document.getElementById('studentsLoading');
+            
+            loading.style.display = 'none';
+            
+            if (students.length === 0) {
+                container.innerHTML = '<div class="error">No students found</div>';
+                return;
+            }
+            
+            const html = `
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Email</th>
+                            <th>Messages</th>
+                            <th>Last Active</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${students.map(student => `
+                            <tr>
+                                <td>${student.name || 'Unknown'}</td>
+                                <td>${student.email}</td>
+                                <td>${student.total_messages || 0}</td>
+                                <td>${formatDate(student.last_active)}</td>
+                                <td>
+                                    <button class="btn btn-primary" onclick="viewStudentConversations('${student.student_id}')">
+                                        View Conversations
+                                    </button>
+                                </td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+            
+            container.innerHTML = html;
+        }
+        
+        // Load conversations
+        async function loadConversations() {
+            try {
+                const response = await fetch(`${API_URL}/api/admin/conversations?limit=20`, {
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`
+                    }
+                });
+                
+                if (!response.ok) throw new Error('Failed to load conversations');
+                
+                const data = await response.json();
+                displayConversations(data.conversations);
+                
+            } catch (error) {
+                console.error('Error loading conversations:', error);
+                document.getElementById('conversationsLoading').innerHTML = '<div class="error">Failed to load conversations</div>';
+            }
+        }
+        
+        // Display conversations
+        function displayConversations(conversations) {
+            const container = document.getElementById('conversationsList');
+            const loading = document.getElementById('conversationsLoading');
+            
+            loading.style.display = 'none';
+            
+            if (conversations.length === 0) {
+                container.innerHTML = '<div class="error">No conversations found</div>';
+                return;
+            }
+            
+            const html = conversations.map(conv => `
+                <div class="conversation-item">
+                    <div class="role">${conv.role === 'student' ? '👤 Student' : '🤖 AI Tutor'}</div>
+                    <div class="message">${conv.message}</div>
+                    <div class="timestamp">${formatDate(conv.created_at)} - ${conv.name || 'Unknown'}</div>
+                </div>
+            `).join('');
+            
+            container.innerHTML = html;
+        }
+        
+        // Load flagged content
+        async function loadFlaggedContent() {
+            try {
+                const response = await fetch(`${API_URL}/api/admin/flagged`, {
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`
+                    }
+                });
+                
+                if (!response.ok) throw new Error('Failed to load flagged content');
+                
+                const data = await response.json();
+                displayFlaggedContent(data.flagged);
+                
+            } catch (error) {
+                console.error('Error loading flagged content:', error);
+                document.getElementById('flaggedLoading').innerHTML = '<div class="error">Failed to load flagged content</div>';
+            }
+        }
+        
+        // Display flagged content
+        function displayFlaggedContent(flagged) {
+            const container = document.getElementById('flaggedList');
+            const loading = document.getElementById('flaggedLoading');
+            
+            loading.style.display = 'none';
+            
+            if (flagged.length === 0) {
+                container.innerHTML = '<div class="error">No flagged content found</div>';
+                return;
+            }
+            
+            const html = flagged.map(flag => `
+                <div class="conversation-item">
+                    <div class="role">🚩 Flagged Content</div>
+                    <div class="message">${flag.message_text}</div>
+                    <div class="timestamp">
+                        ${formatDate(flag.flagged_at)} - ${flag.reason}
+                        <br>Student: ${flag.name || 'Unknown'} (${flag.student_id})
+                    </div>
+                </div>
+            `).join('');
+            
+            container.innerHTML = html;
+        }
+        
+        // Load analytics
+        async function loadAnalytics() {
+            try {
+                const response = await fetch(`${API_URL}/api/admin/analytics`, {
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`
+                    }
+                });
+                
+                if (!response.ok) throw new Error('Failed to load analytics');
+                
+                const analytics = await response.json();
+                displayAnalytics(analytics);
+                
+            } catch (error) {
+                console.error('Error loading analytics:', error);
+                document.getElementById('analyticsLoading').innerHTML = '<div class="error">Failed to load analytics</div>';
+            }
+        }
+        
+        // Display analytics
+        function displayAnalytics(analytics) {
+            const container = document.getElementById('analyticsContent');
+            const loading = document.getElementById('analyticsLoading');
+            
+            loading.style.display = 'none';
+            
+            const html = `
+                <div class="student-details">
+                    <h3>📊 Platform Insights</h3>
+                    <p><strong>Average Response Time:</strong> ${analytics.response_stats?.avg_response_time ? Math.round(analytics.response_stats.avg_response_time) + 'ms' : 'N/A'}</p>
+                    <p><strong>Top Active Students (7 days):</strong></p>
+                    <ul>
+                        ${(analytics.top_students || []).slice(0, 5).map(student => 
+                            `<li>${student.name || 'Unknown'} - ${student.message_count} messages</li>`
+                        ).join('')}
+                    </ul>
+                </div>
+            `;
+            
+            container.innerHTML = html;
+        }
+        
+        // View student conversations
+        async function viewStudentConversations(studentId) {
+            currentStudentId = studentId;
+            
+            try {
+                const response = await fetch(`${API_URL}/api/admin/student/${studentId}/conversations`, {
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`
+                    }
+                });
+                
+                if (!response.ok) throw new Error('Failed to load student conversations');
+                
+                const data = await response.json();
+                displayStudentConversations(data.conversations, studentId);
+                
+            } catch (error) {
+                console.error('Error loading student conversations:', error);
+                showError('Failed to load student conversations');
+            }
+        }
+        
+        // Display student conversations
+        function displayStudentConversations(conversations, studentId) {
+            const modal = document.createElement('div');
+            modal.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background: rgba(0, 0, 0, 0.5);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                z-index: 1000;
+            `;
+            
+            const content = document.createElement('div');
+            content.style.cssText = `
+                background: white;
+                border-radius: 12px;
+                padding: 2rem;
+                max-width: 800px;
+                max-height: 80vh;
+                overflow-y: auto;
+                margin: 2rem;
+            `;
+            
+            const html = `
+                <h2>Student Conversations - ${studentId}</h2>
+                <button onclick="this.closest('.modal').remove()" style="float: right; background: #e2e8f0; border: none; padding: 0.5rem; border-radius: 4px; cursor: pointer;">Close</button>
+                <div style="clear: both; margin-top: 1rem;">
+                    ${conversations.map(conv => `
+                        <div class="conversation-item">
+                            <div class="role">${conv.role === 'student' ? '👤 Student' : '🤖 AI Tutor'}</div>
+                            <div class="message">${conv.message}</div>
+                            <div class="timestamp">${formatDate(conv.created_at)}</div>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+            
+            content.innerHTML = html;
+            modal.className = 'modal';
+            modal.appendChild(content);
+            document.body.appendChild(modal);
+        }
+        
+        // Tab switching
+        function switchTab(tabName) {
+            // Remove active class from all tabs and content
+            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            
+            // Add active class to selected tab and content
+            event.target.classList.add('active');
+            document.getElementById(tabName).classList.add('active');
+        }
+        
+        // Utility functions
+        function formatDate(dateString) {
+            if (!dateString) return 'Unknown';
+            const date = new Date(dateString);
+            return date.toLocaleString();
+        }
+        
+        function showError(message) {
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'error';
+            errorDiv.textContent = message;
+            document.querySelector('.container').insertBefore(errorDiv, document.querySelector('.stats-grid'));
+        }
+        
+        // Initialize on load
+        document.addEventListener('DOMContentLoaded', initializeDashboard);
+    </script>
+</body>
+</html>

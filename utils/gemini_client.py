@@ -226,8 +226,7 @@ def check_content_safety(message):
     academic_patterns = [
         r'\b(cheat\s+on\s+test|copy\s+homework|plagiarize|steal\s+answers)\b',
         r'\b(essay\s+service|homework\s+help\s+for\s+money|buy\s+essay)\b',
-        r'\b(cheating\s+website|test\s+answers\s+online)\b',
-        r'\b(help\s+me\s+cheat|let\s+me\s+cheat|cheat\s+on\s+this)\b'
+        r'\b(cheating\s+website|test\s+answers\s+online)\b'
     ]
     
     for pattern in academic_patterns:
@@ -263,7 +262,7 @@ def check_content_safety(message):
     ]
     
     profanity_count = sum(1 for word in profanity_words if word in message_lower)
-    if profanity_count >= 2:  # Changed from > 2 to >= 2
+    if profanity_count > 2:
         return False, f"Excessive profanity detected ({profanity_count} instances)", "medium"
     
     # 10. SPAM & REPETITIVE CONTENT
