@@ -1,325 +1,146 @@
-<!-- ===== Admin Dashboard Launcher for LearnWorlds ===== -->
+<!-- ===== Full-Page Admin Dashboard (Inline Embed) ===== -->
 <style>
-  /* Admin launcher button */
-  .ce-admin-launcher {
-    position: fixed;
-    right: 20px;
-    top: 20px;
-    z-index: 9999;
-    width: 60px;
-    height: 60px;
-    border-radius: 50%;
-    border: 3px solid #dc2626;
-    box-shadow: 0 8px 25px rgba(220, 38, 38, 0.3);
-    background: linear-gradient(135deg, #dc2626 0%, #f59e0b 100%);
-    color: #fff;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    font-size: 24px;
+  /* Remove LearnWorlds section + column wrappers */
+  #section_1760631473595_361,
+  #section_1760631473595_361 .learnworlds-section-content,
+  #el_1760631473608_366 {
+    padding: 0 !important;
+    margin: 0 !important;
+    max-width: 100% !important;
+    width: 100% !important;
+    background: transparent !important;
+    border: 0 !important;
   }
   
-  .ce-admin-launcher:hover {
-    transform: translateY(-3px) scale(1.1);
-    box-shadow: 0 12px 35px rgba(220, 38, 38, 0.4);
-    border-color: #b91c1c;
-  }
-
-  /* Admin panel (full screen) */
-  .ce-admin-panel {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    z-index: 9999;
+  /* make the dashboard truly full-width/full-height */
+  .ce-admin-root {
+    width: 100vw;
+    height: 100vh;
     background: #fff;
-    transform: translateY(-100%);
-    opacity: 0;
-    pointer-events: none;
-    transition: transform 0.3s ease, opacity 0.3s ease;
     overflow: hidden;
   }
   
-  .ce-admin-panel.open {
-    transform: translateY(0);
-    opacity: 1;
-    pointer-events: auto;
-  }
-
-  /* Admin header */
-  .ce-admin-header {
-    height: 70px;
-    background: linear-gradient(135deg, #dc2626 0%, #f59e0b 100%);
-    color: #fff;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 0 30px;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-  }
-  
-  .ce-admin-header h1 {
-    font-size: 24px;
-    font-weight: 700;
-    margin: 0;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-  }
-  
-  .ce-admin-close {
-    background: rgba(255, 255, 255, 0.2);
-    border: 1px solid rgba(255, 255, 255, 0.3);
-    color: #fff;
-    cursor: pointer;
-    font-size: 16px;
-    padding: 10px 15px;
-    border-radius: 8px;
-    transition: all 0.2s ease;
-    font-weight: 600;
-  }
-  
-  .ce-admin-close:hover {
-    background: rgba(255, 255, 255, 0.3);
-    transform: scale(1.05);
-  }
-
-  /* Admin iframe */
-  .ce-admin-frame {
+  .ce-admin-iframe {
     width: 100%;
-    height: calc(100% - 70px);
+    height: 100%;
     border: 0;
-    background: #f8fafc;
+    display: none;
   }
-
-  /* Admin toast notifications */
-  .ce-admin-toast {
-    position: fixed;
-    right: 90px;
-    top: 100px;
-    z-index: 9999;
-    background: linear-gradient(135deg, #dc2626 0%, #f59e0b 100%);
-    color: #fff;
-    padding: 12px 18px;
-    border-radius: 12px;
-    font-size: 14px;
-    opacity: 0;
-    pointer-events: none;
+  
+  .ce-admin-notice {
+    display: none;
+    padding: 1rem;
+    background: #fff3cd;
+    border: 1px solid #ffe69c;
+    color: #92400e;
+    border-radius: 8px;
     font-weight: 600;
-    transform: translateY(-10px);
-    transition: all 0.3s ease;
-    box-shadow: 0 4px 15px rgba(220, 38, 38, 0.3);
-    border: 1px solid rgba(255, 255, 255, 0.2);
   }
+  </style>
   
-  .ce-admin-toast.show {
-    opacity: 0.95;
-    transform: translateY(0);
-  }
-
-  /* Mobile responsiveness */
-  @media (max-width: 768px) {
-    .ce-admin-launcher {
-      right: 15px;
-      top: 15px;
-      width: 50px;
-      height: 50px;
-      font-size: 20px;
-    }
-    
-    .ce-admin-header {
-      height: 60px;
-      padding: 0 20px;
-    }
-    
-    .ce-admin-header h1 {
-      font-size: 20px;
-    }
-    
-    .ce-admin-frame {
-      height: calc(100% - 60px);
-    }
-    
-    .ce-admin-toast {
-      right: 70px;
-      top: 80px;
-    }
-  }
-</style>
-
-<!-- Root containers -->
-<script>
-(function(){
-  // ---- CONFIG ----
-  const BACKEND = "https://cherence-tutor.vercel.app"; // Your deployed Vercel URL
-  const TITLE = "🔐 Admin Dashboard";
-
-  // LW Liquid variables (render only for logged-in users)
-  const LW_USER = {
-    id: "{{user.id}}",
-    username: "{{user.username}}",
-    email: "{{user.email}}"
-  };
-
-  // Guard: if Liquid didn't render (not logged in), quit silently
-  if (!LW_USER.id || String(LW_USER.id).includes("{{")) return;
-
-  // Check if user is admin (only show for admin emails)
-  const ADMIN_EMAILS = [
-    'andrew@coherence.org',
-    'mina@coherenceeducation.org', 
-    'support@coherenceeducation.org',
-    'evan.senour@gmail.com',
-    'gavinli.automation@gmail.com'
-  ];
   
-  if (!ADMIN_EMAILS.includes(LW_USER.email.toLowerCase())) {
-    console.log("User is not admin, hiding admin launcher");
-    return;
-  }
-
-  // UI elements
-  const btn = document.createElement("button");
-  btn.className = "ce-admin-launcher";
-  btn.setAttribute("aria-label", "Open Admin Dashboard");
-  btn.innerHTML = '🔐';
-
-  const panel = document.createElement("div");
-  panel.className = "ce-admin-panel";
-  panel.innerHTML = `
-    <div class="ce-admin-header">
-      <h1>${TITLE}</h1>
-      <button class="ce-admin-close" title="Close">✕</button>
-    </div>
-    <iframe class="ce-admin-frame" title="${TITLE}" allow="clipboard-read; clipboard-write"></iframe>
-  `;
-
-  const toast = document.createElement("div");
-  toast.className = "ce-admin-toast";
-  toast.textContent = "Connecting to Admin Dashboard…";
-
-  document.body.appendChild(btn);
-  document.body.appendChild(panel);
-  document.body.appendChild(toast);
-
-  const iframe = panel.querySelector(".ce-admin-frame");
-  const close = panel.querySelector(".ce-admin-close");
-
-  // Enhanced token caching for admin
-  const cacheKey = `ce.admin.jwt.${LW_USER.id}`;
-  function getCachedToken(){
-    try{
-      const raw = localStorage.getItem(cacheKey);
-      if(!raw) return null;
-      const {token, ts} = JSON.parse(raw);
-      if(Date.now() - ts > 20*60*60*1000) return null; // >20h old
-      return token;
-    }catch{ return null; }
-  }
+  <div id="ce-admin-root" class="ce-admin-root">
+    <div id="ce-admin-notice" class="ce-admin-notice"></div>
+    <iframe id="ce-admin-iframe" class="ce-admin-iframe" title="Admin Dashboard"></iframe>
+  </div>
   
-  function setCachedToken(token){
-    try{ localStorage.setItem(cacheKey, JSON.stringify({token, ts: Date.now()})); }catch{}
-  }
-
-  async function fetchAdminToken(){
-    // Show enhanced toast while we work
-    toast.classList.add("show");
-    try{
+  <script>
+  (function(){
+    // ---- CONFIG ----
+    const BACKEND = "https://cherence-tutor.vercel.app"; // ✅ your deployed URL
+    const AUTO_LOAD = true; // set to false if you only want to load on a button click
+    const ADMIN_EMAILS = [
+      'andrew@coherence.org',
+      'mina@coherenceeducation.org', 
+      'support@coherenceeducation.org',
+      'evan.senour@gmail.com',
+      'gavinli.automation@gmail.com'
+    ].map(e => e.toLowerCase());
+  
+    // LW Liquid user variables
+    const LW_USER = {
+      id: "{{user.id}}",
+      username: "{{user.username}}",
+      email: "{{user.email}}"
+    };
+  
+    const root = document.getElementById('ce-admin-root');
+    const iframe = document.getElementById('ce-admin-iframe');
+    const notice = document.getElementById('ce-admin-notice');
+  
+    // Quick checks
+    if (!LW_USER.id || String(LW_USER.id).includes("{{")) {
+      showNotice("Please sign in to access the Admin Dashboard.");
+      return;
+    }
+    if (!LW_USER.email || !ADMIN_EMAILS.includes(LW_USER.email.toLowerCase())) {
+      showNotice("You do not have permission to view the Admin Dashboard.");
+      return;
+    }
+  
+    // Token caching (optional)
+    const cacheKey = `ce.admin.jwt.${LW_USER.id}`;
+    function getCachedToken(){
+      try {
+        const raw = localStorage.getItem(cacheKey);
+        if(!raw) return null;
+        const {token, ts} = JSON.parse(raw);
+        if(Date.now() - ts > 20*60*60*1000) return null; // older than 20h
+        return token;
+      } catch { return null; }
+    }
+    function setCachedToken(token){
+      try { localStorage.setItem(cacheKey, JSON.stringify({token, ts: Date.now()})); } catch {}
+    }
+  
+    async function fetchAdminToken(){
       const cached = getCachedToken();
-      if (cached) {
-        toast.textContent = "Admin Connected! 🔐";
-        setTimeout(()=>toast.classList.remove("show"), 500);
-        return cached;
-      }
-
-      toast.textContent = "Authenticating Admin…";
+      if (cached) return cached;
+  
       const payload = {
         student_id: LW_USER.id,
         email: LW_USER.email,
         name: LW_USER.username || ""
       };
-
+  
       const res = await fetch(`${BACKEND}/api/auth/token`, {
         method: "POST",
         headers: {"Content-Type":"application/json"},
         body: JSON.stringify(payload)
       });
-      
+  
       if(!res.ok){
         const t = await res.text();
         throw new Error(`Token error ${res.status}: ${t}`);
       }
-      
       const data = await res.json();
-      
-      // Verify admin role
-      if (!data.is_admin) {
-        throw new Error("Admin access required");
-      }
-      
+      if (!data.is_admin) throw new Error("Admin access required");
+  
       setCachedToken(data.token);
-      toast.textContent = "Admin Connected! 🔐";
-      setTimeout(()=>toast.classList.remove("show"), 500);
       return data.token;
-      
-    } catch(err) {
-      toast.textContent = "Admin access denied. Retrying…";
-      setTimeout(()=>toast.classList.remove("show"), 1000);
-      throw err;
     }
-  }
-
-  async function openAdminDashboard(){
-    try{
-      panel.classList.add("open");
-      // lazy-load iframe only when opened
-      const token = await fetchAdminToken();
-      iframe.src = `${BACKEND}/admin?token=${encodeURIComponent(token)}`;
-      // Ensure focus
-      iframe.focus();
-    }catch(err){
-      panel.classList.remove("open");
-      toast.textContent = "Admin access denied. Contact system administrator.";
-      toast.classList.add("show");
-      setTimeout(()=>toast.classList.remove("show"), 3000);
-      console.warn("Admin Dashboard init failed:", err);
-    }
-  }
-
-  function closeAdminDashboard(){
-    panel.classList.remove("open");
-    // Keep session alive but hide panel
-  }
-
-  // Enhanced event listeners
-  btn.addEventListener("click", openAdminDashboard);
-  close.addEventListener("click", closeAdminDashboard);
   
-  // Close on ESC key
-  document.addEventListener("keydown", (e)=>{ 
-    if(e.key === "Escape") closeAdminDashboard(); 
-  });
+    function showNotice(msg){
+      notice.textContent = msg;
+      notice.style.display = 'block';
+    }
   
-  // Close when clicking outside panel
-  document.addEventListener("click", (e) => {
-    if (panel.classList.contains("open") && 
-        !panel.contains(e.target) && 
-        !btn.contains(e.target)) {
-      closeAdminDashboard();
+    async function mountInline(){
+      try {
+        const token = await fetchAdminToken();
+        iframe.src = `${BACKEND}/admin?token=${encodeURIComponent(token)}`;
+        iframe.style.display = 'block';
+      } catch (err) {
+        console.warn("Admin mount failed:", err);
+        showNotice("Unable to load the Admin Dashboard. Please try again or contact support.");
+      }
     }
-  });
-
-  // Listen for close message from iframe
-  window.addEventListener("message", (e) => {
-    if (e.data === "closeAdmin") {
-      closeAdminDashboard();
+  
+    // Auto-load the dashboard for admins
+    if (AUTO_LOAD) {
+      mountInline();
     }
-  });
-
-  console.log("🔐 Admin Dashboard launcher initialized for:", LW_USER.email);
-})();
-</script>
-<!-- ===== /Admin Dashboard Launcher ===== -->
+  })();
+  </script>
+  <!-- ===== /Full-Page Admin Dashboard (Inline Embed) ===== -->
+  

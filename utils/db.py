@@ -620,3 +620,352 @@ def get_platform_analytics():
     finally:
         cursor.close()
         conn.close()
+
+def get_comprehensive_analytics():
+    """Get comprehensive analytics including engagement, topics, sentiment, and progress"""
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    try:
+        # Engagement Metrics
+        engagement_stats = get_engagement_metrics(cursor)
+        
+        # Topic Analysis
+        topic_stats = get_topic_analysis(cursor)
+        
+        # Sentiment Analysis
+        sentiment_stats = get_sentiment_analysis(cursor)
+        
+        # Progress Indicators
+        progress_stats = get_progress_indicators(cursor)
+        
+        # Academic Focus
+        academic_focus = get_academic_focus(cursor)
+        
+        # Curiosity & Creativity
+        curiosity_stats = get_curiosity_metrics(cursor)
+        
+        return {
+            'engagement': engagement_stats,
+            'topics': topic_stats,
+            'sentiment': sentiment_stats,
+            'progress': progress_stats,
+            'academic_focus': academic_focus,
+            'curiosity': curiosity_stats
+        }
+    except Error as e:
+        print(f"Error fetching comprehensive analytics: {e}")
+        return {}
+    finally:
+        cursor.close()
+        conn.close()
+
+def get_engagement_metrics(cursor):
+    """Get engagement metrics: chats, avg messages/session, duration"""
+    try:
+        # Total chats (sessions)
+        cursor.execute("""
+            SELECT COUNT(DISTINCT session_id) as total_chats
+            FROM conversation_history 
+            WHERE session_id IS NOT NULL
+        """)
+        total_chats = cursor.fetchone()['total_chats']
+        
+        # Average messages per session
+        cursor.execute("""
+            SELECT AVG(session_messages) as avg_messages_per_session
+            FROM (
+                SELECT session_id, COUNT(*) as session_messages
+                FROM conversation_history 
+                WHERE session_id IS NOT NULL
+                GROUP BY session_id
+            ) as session_counts
+        """)
+        avg_messages_per_session = cursor.fetchone()['avg_messages_per_session'] or 0
+        
+        # Average session duration (estimated from first to last message)
+        cursor.execute("""
+            SELECT AVG(session_duration_minutes) as avg_session_duration
+            FROM (
+                SELECT session_id, 
+                       TIMESTAMPDIFF(MINUTE, MIN(created_at), MAX(created_at)) as session_duration_minutes
+                FROM conversation_history 
+                WHERE session_id IS NOT NULL
+                GROUP BY session_id
+                HAVING COUNT(*) > 1
+            ) as session_durations
+        """)
+        avg_session_duration = cursor.fetchone()['avg_session_duration'] or 0
+        
+        # Unique students with activity
+        cursor.execute("""
+            SELECT COUNT(DISTINCT student_id) as unique_active_students
+            FROM conversation_history 
+            WHERE created_at >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)
+        """)
+        unique_active_students = cursor.fetchone()['unique_active_students']
+        
+        return {
+            'total_chats': total_chats,
+            'avg_messages_per_session': round(avg_messages_per_session, 1),
+            'avg_session_duration_minutes': round(avg_session_duration, 1),
+            'unique_active_students_7d': unique_active_students
+        }
+    except Error as e:
+        print(f"Error fetching engagement metrics: {e}")
+        return {}
+
+def get_topic_analysis(cursor):
+    """Analyze topics and subjects most commonly asked by students"""
+    try:
+        # Get all student messages for topic analysis
+        cursor.execute("""
+            SELECT message, student_id, created_at
+            FROM conversation_history 
+            WHERE role = 'student' 
+            AND created_at >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)
+            ORDER BY created_at DESC
+        """)
+        messages = cursor.fetchall()
+        
+        # Simple topic extraction based on keywords
+        topic_keywords = {
+            'Mathematics': ['math', 'algebra', 'geometry', 'calculus', 'equation', 'solve', 'problem', 'number', 'formula'],
+            'Science': ['science', 'physics', 'chemistry', 'biology', 'experiment', 'theory', 'hypothesis', 'molecule'],
+            'English': ['english', 'grammar', 'writing', 'essay', 'poetry', 'literature', 'novel', 'story', 'paragraph'],
+            'History': ['history', 'historical', 'war', 'ancient', 'century', 'empire', 'revolution', 'timeline'],
+            'Technology': ['computer', 'programming', 'code', 'software', 'technology', 'digital', 'internet', 'app'],
+            'Art': ['art', 'drawing', 'painting', 'creative', 'design', 'color', 'artist', 'gallery'],
+            'Music': ['music', 'song', 'instrument', 'piano', 'guitar', 'melody', 'rhythm', 'concert'],
+            'Health': ['health', 'exercise', 'nutrition', 'body', 'fitness', 'wellness', 'medical', 'disease']
+        }
+        
+        topic_counts = {}
+        topic_students = {}
+        
+        for message in messages:
+            message_text = message['message'].lower()
+            student_id = message['student_id']
+            
+            for topic, keywords in topic_keywords.items():
+                if any(keyword in message_text for keyword in keywords):
+                    topic_counts[topic] = topic_counts.get(topic, 0) + 1
+                    if topic not in topic_students:
+                        topic_students[topic] = set()
+                    topic_students[topic].add(student_id)
+        
+        # Convert to list with unique student counts
+        top_topics = []
+        for topic, count in sorted(topic_counts.items(), key=lambda x: x[1], reverse=True):
+            top_topics.append({
+                'topic': topic,
+                'total_questions': count,
+                'unique_students': len(topic_students[topic])
+            })
+        
+        return {
+            'top_topics': top_topics[:10],  # Top 10 topics
+            'total_topics_identified': len(topic_counts)
+        }
+    except Error as e:
+        print(f"Error fetching topic analysis: {e}")
+        return {}
+
+def get_sentiment_analysis(cursor):
+    """Analyze sentiment trends in student messages"""
+    try:
+        # Simple sentiment analysis based on keywords
+        positive_keywords = ['good', 'great', 'awesome', 'amazing', 'love', 'like', 'excited', 'happy', 'wonderful', 'fantastic', 'excellent', 'perfect', 'thank', 'helpful', 'understand', 'clear', 'easy']
+        negative_keywords = ['bad', 'terrible', 'awful', 'hate', 'difficult', 'confused', 'frustrated', 'angry', 'sad', 'worried', 'stressed', 'hard', 'complicated', 'don\'t understand', 'stuck']
+        
+        cursor.execute("""
+            SELECT message, created_at, student_id
+            FROM conversation_history 
+            WHERE role = 'student' 
+            AND created_at >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)
+            ORDER BY created_at DESC
+        """)
+        messages = cursor.fetchall()
+        
+        sentiment_counts = {'positive': 0, 'negative': 0, 'neutral': 0}
+        daily_sentiment = {}
+        
+        for message in messages:
+            message_text = message['message'].lower()
+            date = message['created_at'].date()
+            
+            positive_score = sum(1 for word in positive_keywords if word in message_text)
+            negative_score = sum(1 for word in negative_keywords if word in message_text)
+            
+            if positive_score > negative_score:
+                sentiment = 'positive'
+            elif negative_score > positive_score:
+                sentiment = 'negative'
+            else:
+                sentiment = 'neutral'
+            
+            sentiment_counts[sentiment] += 1
+            
+            if date not in daily_sentiment:
+                daily_sentiment[date] = {'positive': 0, 'negative': 0, 'neutral': 0}
+            daily_sentiment[date][sentiment] += 1
+        
+        # Calculate percentages
+        total_messages = sum(sentiment_counts.values())
+        sentiment_percentages = {
+            'positive': round((sentiment_counts['positive'] / total_messages * 100), 1) if total_messages > 0 else 0,
+            'negative': round((sentiment_counts['negative'] / total_messages * 100), 1) if total_messages > 0 else 0,
+            'neutral': round((sentiment_counts['neutral'] / total_messages * 100), 1) if total_messages > 0 else 0
+        }
+        
+        return {
+            'sentiment_distribution': sentiment_percentages,
+            'total_analyzed': total_messages,
+            'daily_trends': daily_sentiment
+        }
+    except Error as e:
+        print(f"Error fetching sentiment analysis: {e}")
+        return {}
+
+def get_progress_indicators(cursor):
+    """Track progress indicators like question depth and sentiment positivity over time"""
+    try:
+        # Question depth analysis (based on message length and complexity)
+        cursor.execute("""
+            SELECT 
+                student_id,
+                DATE(created_at) as date,
+                AVG(LENGTH(message)) as avg_message_length,
+                COUNT(*) as daily_messages
+            FROM conversation_history 
+            WHERE role = 'student' 
+            AND created_at >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)
+            GROUP BY student_id, DATE(created_at)
+            ORDER BY student_id, date
+        """)
+        progress_data = cursor.fetchall()
+        
+        # Calculate growth trends
+        student_progress = {}
+        for row in progress_data:
+            student_id = row['student_id']
+            if student_id not in student_progress:
+                student_progress[student_id] = []
+            student_progress[student_id].append({
+                'date': row['date'],
+                'avg_length': row['avg_message_length'],
+                'message_count': row['daily_messages']
+            })
+        
+        # Identify students with positive growth
+        growing_students = 0
+        for student_id, data in student_progress.items():
+            if len(data) >= 3:  # Need at least 3 data points
+                recent_avg = sum(d['avg_length'] for d in data[-3:]) / 3
+                early_avg = sum(d['avg_length'] for d in data[:3]) / 3
+                if recent_avg > early_avg * 1.1:  # 10% growth
+                    growing_students += 1
+        
+        return {
+            'students_with_growth': growing_students,
+            'total_tracked_students': len(student_progress),
+            'growth_percentage': round((growing_students / len(student_progress) * 100), 1) if student_progress else 0
+        }
+    except Error as e:
+        print(f"Error fetching progress indicators: {e}")
+        return {}
+
+def get_academic_focus(cursor):
+    """Get top 5 subjects/topics asked about"""
+    try:
+        # Enhanced academic subject detection
+        academic_subjects = {
+            'Mathematics': ['math', 'algebra', 'geometry', 'calculus', 'trigonometry', 'statistics', 'equation', 'solve', 'problem', 'number', 'formula', 'theorem', 'proof'],
+            'Science': ['science', 'physics', 'chemistry', 'biology', 'experiment', 'theory', 'hypothesis', 'molecule', 'atom', 'cell', 'organism', 'lab', 'research'],
+            'English Literature': ['english', 'literature', 'novel', 'poetry', 'essay', 'writing', 'grammar', 'story', 'character', 'theme', 'author', 'book'],
+            'History': ['history', 'historical', 'war', 'ancient', 'century', 'empire', 'revolution', 'timeline', 'civilization', 'culture', 'historical event'],
+            'Computer Science': ['programming', 'code', 'computer', 'software', 'algorithm', 'python', 'javascript', 'coding', 'development', 'app', 'website'],
+            'Art & Design': ['art', 'drawing', 'painting', 'creative', 'design', 'color', 'artist', 'gallery', 'sculpture', 'visual', 'aesthetic'],
+            'Music': ['music', 'song', 'instrument', 'piano', 'guitar', 'melody', 'rhythm', 'concert', 'composer', 'musical', 'band'],
+            'Health & PE': ['health', 'exercise', 'nutrition', 'body', 'fitness', 'wellness', 'medical', 'disease', 'sports', 'physical education']
+        }
+        
+        cursor.execute("""
+            SELECT message, student_id
+            FROM conversation_history 
+            WHERE role = 'student' 
+            AND created_at >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)
+        """)
+        messages = cursor.fetchall()
+        
+        subject_counts = {}
+        subject_students = {}
+        
+        for message in messages:
+            message_text = message['message'].lower()
+            student_id = message['student_id']
+            
+            for subject, keywords in academic_subjects.items():
+                if any(keyword in message_text for keyword in keywords):
+                    subject_counts[subject] = subject_counts.get(subject, 0) + 1
+                    if subject not in subject_students:
+                        subject_students[subject] = set()
+                    subject_students[subject].add(student_id)
+        
+        # Get top 5 subjects
+        top_subjects = []
+        for subject, count in sorted(subject_counts.items(), key=lambda x: x[1], reverse=True)[:5]:
+            top_subjects.append({
+                'subject': subject,
+                'question_count': count,
+                'unique_students': len(subject_students[subject])
+            })
+        
+        return {
+            'top_5_subjects': top_subjects,
+            'total_subjects_identified': len(subject_counts)
+        }
+    except Error as e:
+        print(f"Error fetching academic focus: {e}")
+        return {}
+
+def get_curiosity_metrics(cursor):
+    """Analyze curiosity and creativity: % open-ended vs factual questions"""
+    try:
+        # Define patterns for different question types
+        open_ended_patterns = ['why', 'how', 'what if', 'explain', 'describe', 'compare', 'analyze', 'evaluate', 'create', 'design', 'imagine', 'think about']
+        factual_patterns = ['what is', 'when', 'where', 'who', 'define', 'list', 'name', 'identify', 'calculate', 'solve', 'find']
+        
+        cursor.execute("""
+            SELECT message
+            FROM conversation_history 
+            WHERE role = 'student' 
+            AND created_at >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)
+            AND message LIKE '%?%'
+        """)
+        questions = cursor.fetchall()
+        
+        open_ended_count = 0
+        factual_count = 0
+        total_questions = len(questions)
+        
+        for question in questions:
+            question_text = question['message'].lower()
+            
+            open_ended_score = sum(1 for pattern in open_ended_patterns if pattern in question_text)
+            factual_score = sum(1 for pattern in factual_patterns if pattern in question_text)
+            
+            if open_ended_score > factual_score:
+                open_ended_count += 1
+            elif factual_score > open_ended_score:
+                factual_count += 1
+        
+        return {
+            'total_questions_analyzed': total_questions,
+            'open_ended_percentage': round((open_ended_count / total_questions * 100), 1) if total_questions > 0 else 0,
+            'factual_percentage': round((factual_count / total_questions * 100), 1) if total_questions > 0 else 0,
+            'open_ended_count': open_ended_count,
+            'factual_count': factual_count
+        }
+    except Error as e:
+        print(f"Error fetching curiosity metrics: {e}")
+        return {}

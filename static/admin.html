@@ -287,12 +287,141 @@
             margin-top: 0.5rem;
         }
         
+        .analytics-section {
+            margin-bottom: 3rem;
+        }
+        
+        .analytics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        
+        .analytics-card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            border: 1px solid #e2e8f0;
+            overflow: hidden;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        
+        .analytics-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        }
+        
+        .analytics-header {
+            padding: 1rem 1.5rem;
+            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+            border-bottom: 1px solid #e2e8f0;
+        }
+        
+        .analytics-header h3 {
+            font-size: 1rem;
+            font-weight: 600;
+            color: #023047;
+            margin: 0;
+        }
+        
+        .analytics-content {
+            padding: 1.5rem;
+        }
+        
+        .metric-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.5rem 0;
+            border-bottom: 1px solid #f1f5f9;
+        }
+        
+        .metric-item:last-child {
+            border-bottom: none;
+        }
+        
+        .metric-label {
+            font-weight: 500;
+            color: #374151;
+        }
+        
+        .metric-value {
+            font-weight: 600;
+            color: #023047;
+        }
+        
+        .topic-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem;
+            background: #f8fafc;
+            border-radius: 6px;
+            margin-bottom: 0.5rem;
+        }
+        
+        .topic-name {
+            font-weight: 500;
+            color: #374151;
+        }
+        
+        .topic-stats {
+            font-size: 0.875rem;
+            color: #64748b;
+        }
+        
+        .sentiment-bar {
+            display: flex;
+            height: 8px;
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 0.5rem 0;
+        }
+        
+        .sentiment-positive {
+            background: #10b981;
+        }
+        
+        .sentiment-neutral {
+            background: #6b7280;
+        }
+        
+        .sentiment-negative {
+            background: #ef4444;
+        }
+        
+        .progress-indicator {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 0;
+        }
+        
+        .progress-bar {
+            flex: 1;
+            height: 6px;
+            background: #e5e7eb;
+            border-radius: 3px;
+            overflow: hidden;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #10b981, #059669);
+            border-radius: 3px;
+        }
+        
         @media (max-width: 768px) {
             .dashboard-grid {
                 grid-template-columns: 1fr;
             }
             
             .stats-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .analytics-grid {
                 grid-template-columns: 1fr;
             }
             
@@ -332,6 +461,68 @@
                 <h3>Flagged Content</h3>
                 <div class="number" id="flaggedContent">-</div>
                 <div class="change">Requires review</div>
+            </div>
+        </div>
+        
+        <!-- Comprehensive Analytics Section -->
+        <div class="analytics-section">
+            <h2 style="margin-bottom: 2rem; color: #023047; font-size: 1.5rem;">📊 Comprehensive Analytics</h2>
+            
+            <!-- Engagement Metrics -->
+            <div class="analytics-grid">
+                <div class="analytics-card">
+                    <div class="analytics-header">
+                        <h3>💬 Engagement Metrics</h3>
+                    </div>
+                    <div class="analytics-content" id="engagementMetrics">
+                        <div class="loading">Loading engagement data...</div>
+                    </div>
+                </div>
+                
+                <div class="analytics-card">
+                    <div class="analytics-header">
+                        <h3>🎯 Academic Focus</h3>
+                    </div>
+                    <div class="analytics-content" id="academicFocus">
+                        <div class="loading">Loading academic data...</div>
+                    </div>
+                </div>
+                
+                <div class="analytics-card">
+                    <div class="analytics-header">
+                        <h3>🧠 Curiosity & Creativity</h3>
+                    </div>
+                    <div class="analytics-content" id="curiosityMetrics">
+                        <div class="loading">Loading curiosity data...</div>
+                    </div>
+                </div>
+                
+                <div class="analytics-card">
+                    <div class="analytics-header">
+                        <h3>📈 Progress Indicators</h3>
+                    </div>
+                    <div class="analytics-content" id="progressIndicators">
+                        <div class="loading">Loading progress data...</div>
+                    </div>
+                </div>
+                
+                <div class="analytics-card">
+                    <div class="analytics-header">
+                        <h3>😊 Wellbeing & Tone</h3>
+                    </div>
+                    <div class="analytics-content" id="sentimentAnalysis">
+                        <div class="loading">Loading sentiment data...</div>
+                    </div>
+                </div>
+                
+                <div class="analytics-card">
+                    <div class="analytics-header">
+                        <h3>📚 Topic Analysis</h3>
+                    </div>
+                    <div class="analytics-content" id="topicAnalysis">
+                        <div class="loading">Loading topic data...</div>
+                    </div>
+                </div>
             </div>
         </div>
         
@@ -421,7 +612,8 @@
                     loadStudents(),
                     loadConversations(),
                     loadFlaggedContent(),
-                    loadAnalytics()
+                    loadAnalytics(),
+                    loadComprehensiveAnalytics()
                 ]);
             } catch (error) {
                 console.error('Error loading dashboard data:', error);
@@ -644,6 +836,184 @@
                     </ul>
                 </div>
             `;
+            
+            container.innerHTML = html;
+        }
+        
+        // Load comprehensive analytics
+        async function loadComprehensiveAnalytics() {
+            try {
+                const response = await fetch(`${API_URL}/api/admin/comprehensive-analytics`, {
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`
+                    }
+                });
+                
+                if (!response.ok) throw new Error('Failed to load comprehensive analytics');
+                
+                const analytics = await response.json();
+                displayComprehensiveAnalytics(analytics);
+                
+            } catch (error) {
+                console.error('Error loading comprehensive analytics:', error);
+                // Don't show error for this as it's supplementary data
+            }
+        }
+        
+        // Display comprehensive analytics
+        function displayComprehensiveAnalytics(analytics) {
+            // Engagement Metrics
+            displayEngagementMetrics(analytics.engagement || {});
+            
+            // Academic Focus
+            displayAcademicFocus(analytics.academic_focus || {});
+            
+            // Curiosity & Creativity
+            displayCuriosityMetrics(analytics.curiosity || {});
+            
+            // Progress Indicators
+            displayProgressIndicators(analytics.progress || {});
+            
+            // Sentiment Analysis
+            displaySentimentAnalysis(analytics.sentiment || {});
+            
+            // Topic Analysis
+            displayTopicAnalysis(analytics.topics || {});
+        }
+        
+        // Display engagement metrics
+        function displayEngagementMetrics(engagement) {
+            const container = document.getElementById('engagementMetrics');
+            container.innerHTML = `
+                <div class="metric-item">
+                    <span class="metric-label">Total Chats</span>
+                    <span class="metric-value">${engagement.total_chats || 0}</span>
+                </div>
+                <div class="metric-item">
+                    <span class="metric-label">Avg Messages/Session</span>
+                    <span class="metric-value">${engagement.avg_messages_per_session || 0}</span>
+                </div>
+                <div class="metric-item">
+                    <span class="metric-label">Avg Session Duration</span>
+                    <span class="metric-value">${engagement.avg_session_duration_minutes || 0} min</span>
+                </div>
+                <div class="metric-item">
+                    <span class="metric-label">Active Students (7d)</span>
+                    <span class="metric-value">${engagement.unique_active_students_7d || 0}</span>
+                </div>
+            `;
+        }
+        
+        // Display academic focus
+        function displayAcademicFocus(academic) {
+            const container = document.getElementById('academicFocus');
+            const topSubjects = academic.top_5_subjects || [];
+            
+            const html = topSubjects.length > 0 ? 
+                topSubjects.map(subject => `
+                    <div class="topic-item">
+                        <span class="topic-name">${subject.subject}</span>
+                        <span class="topic-stats">${subject.question_count} questions (${subject.unique_students} students)</span>
+                    </div>
+                `).join('') : 
+                '<div class="metric-item"><span class="metric-label">No academic data available</span></div>';
+            
+            container.innerHTML = html;
+        }
+        
+        // Display curiosity metrics
+        function displayCuriosityMetrics(curiosity) {
+            const container = document.getElementById('curiosityMetrics');
+            container.innerHTML = `
+                <div class="metric-item">
+                    <span class="metric-label">Total Questions Analyzed</span>
+                    <span class="metric-value">${curiosity.total_questions_analyzed || 0}</span>
+                </div>
+                <div class="metric-item">
+                    <span class="metric-label">Open-ended Questions</span>
+                    <span class="metric-value">${curiosity.open_ended_percentage || 0}%</span>
+                </div>
+                <div class="metric-item">
+                    <span class="metric-label">Factual Questions</span>
+                    <span class="metric-value">${curiosity.factual_percentage || 0}%</span>
+                </div>
+                <div class="progress-indicator">
+                    <span style="font-size: 0.875rem; color: #64748b;">Open-ended vs Factual</span>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: ${curiosity.open_ended_percentage || 0}%"></div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        // Display progress indicators
+        function displayProgressIndicators(progress) {
+            const container = document.getElementById('progressIndicators');
+            container.innerHTML = `
+                <div class="metric-item">
+                    <span class="metric-label">Students with Growth</span>
+                    <span class="metric-value">${progress.students_with_growth || 0}</span>
+                </div>
+                <div class="metric-item">
+                    <span class="metric-label">Total Tracked Students</span>
+                    <span class="metric-value">${progress.total_tracked_students || 0}</span>
+                </div>
+                <div class="metric-item">
+                    <span class="metric-label">Growth Percentage</span>
+                    <span class="metric-value">${progress.growth_percentage || 0}%</span>
+                </div>
+                <div class="progress-indicator">
+                    <span style="font-size: 0.875rem; color: #64748b;">Student Growth Rate</span>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: ${progress.growth_percentage || 0}%"></div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        // Display sentiment analysis
+        function displaySentimentAnalysis(sentiment) {
+            const container = document.getElementById('sentimentAnalysis');
+            const distribution = sentiment.sentiment_distribution || {};
+            
+            container.innerHTML = `
+                <div class="metric-item">
+                    <span class="metric-label">Total Messages Analyzed</span>
+                    <span class="metric-value">${sentiment.total_analyzed || 0}</span>
+                </div>
+                <div class="metric-item">
+                    <span class="metric-label">Positive Sentiment</span>
+                    <span class="metric-value">${distribution.positive || 0}%</span>
+                </div>
+                <div class="metric-item">
+                    <span class="metric-label">Neutral Sentiment</span>
+                    <span class="metric-value">${distribution.neutral || 0}%</span>
+                </div>
+                <div class="metric-item">
+                    <span class="metric-label">Negative Sentiment</span>
+                    <span class="metric-value">${distribution.negative || 0}%</span>
+                </div>
+                <div class="sentiment-bar">
+                    <div class="sentiment-positive" style="width: ${distribution.positive || 0}%"></div>
+                    <div class="sentiment-neutral" style="width: ${distribution.neutral || 0}%"></div>
+                    <div class="sentiment-negative" style="width: ${distribution.negative || 0}%"></div>
+                </div>
+            `;
+        }
+        
+        // Display topic analysis
+        function displayTopicAnalysis(topics) {
+            const container = document.getElementById('topicAnalysis');
+            const topTopics = topics.top_topics || [];
+            
+            const html = topTopics.length > 0 ? 
+                topTopics.slice(0, 5).map(topic => `
+                    <div class="topic-item">
+                        <span class="topic-name">${topic.topic}</span>
+                        <span class="topic-stats">${topic.total_questions} questions (${topic.unique_students} students)</span>
+                    </div>
+                `).join('') : 
+                '<div class="metric-item"><span class="metric-label">No topic data available</span></div>';
             
             container.innerHTML = html;
         }

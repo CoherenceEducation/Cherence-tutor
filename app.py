@@ -23,6 +23,7 @@ from utils.db import (
     get_all_students,
     get_student_conversations,
     get_platform_analytics,
+    get_comprehensive_analytics,
     create_admins_table
 )
 from utils.gemini_client import get_tutor_response, check_content_safety
@@ -418,6 +419,13 @@ def admin_student_conversations(student_id):
 def admin_analytics():
     """Admin: Get detailed platform analytics"""
     analytics = get_platform_analytics()
+    return jsonify(analytics), 200
+
+@app.route('/api/admin/comprehensive-analytics', methods=['GET'])
+@require_admin
+def admin_comprehensive_analytics():
+    """Admin: Get comprehensive analytics including engagement, topics, sentiment, and progress"""
+    analytics = get_comprehensive_analytics()
     return jsonify(analytics), 200
 
 @app.route('/chat', methods=['GET'])
