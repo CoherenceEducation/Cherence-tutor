@@ -683,107 +683,123 @@ def get_engagement_metrics(cursor, since_days: int = 30):
     """Get engagement metrics: chats, avg messages/session, duration"""
     try:
         # First, check whether we have any non-null session_id rows
-        cursor.execute("""
+        cursor.execute(
+            f"""
             SELECT COUNT(*) AS non_null_sessions
             FROM (
                 SELECT session_id
                 FROM conversation_history
                 WHERE session_id IS NOT NULL
-                  AND created_at >= DATE_SUB(CURDATE(), INTERVAL %s DAY)
+                  AND created_at >= DATE_SUB(CURDATE(), INTERVAL {since_days} DAY)
                 GROUP BY session_id
             ) t
-        """, (since_days,))
+            """
+        )
         row = cursor.fetchone()
         has_real_sessions = bool(row and row.get('non_null_sessions', 0))
 
         if has_real_sessions:
             # Use true sessions based on session_id
-            cursor.execute("""
+            cursor.execute(
+                f"""
                 SELECT COUNT(*) as total_chats
                 FROM (
                     SELECT session_id
                     FROM conversation_history 
                     WHERE session_id IS NOT NULL
-                      AND created_at >= DATE_SUB(CURDATE(), INTERVAL %s DAY)
+                      AND created_at >= DATE_SUB(CURDATE(), INTERVAL {since_days} DAY)
                     GROUP BY session_id
                 ) s
-            """, (since_days,))
+                """
+            )
             result = cursor.fetchone()
             total_chats = result['total_chats'] if result else 0
 
-            cursor.execute("""
+            cursor.execute(
+                f"""
                 SELECT AVG(session_messages) as avg_messages_per_session
                 FROM (
                     SELECT session_id, COUNT(*) as session_messages
                     FROM conversation_history 
                     WHERE session_id IS NOT NULL
-                      AND created_at >= DATE_SUB(CURDATE(), INTERVAL %s DAY)
+                      AND created_at >= DATE_SUB(CURDATE(), INTERVAL {since_days} DAY)
                     GROUP BY session_id
                 ) as session_counts
-            """, (since_days,))
+                """
+            )
             result = cursor.fetchone()
             avg_messages_per_session = result['avg_messages_per_session'] if result and result['avg_messages_per_session'] else 0
 
-            cursor.execute("""
+            cursor.execute(
+                f"""
                 SELECT AVG(session_duration_minutes) as avg_session_duration
                 FROM (
                     SELECT session_id, 
                            TIMESTAMPDIFF(MINUTE, MIN(created_at), MAX(created_at)) as session_duration_minutes
                     FROM conversation_history 
                     WHERE session_id IS NOT NULL
-                      AND created_at >= DATE_SUB(CURDATE(), INTERVAL %s DAY)
+                      AND created_at >= DATE_SUB(CURDATE(), INTERVAL {since_days} DAY)
                     GROUP BY session_id
                     HAVING COUNT(*) > 1
                 ) as session_durations
-            """, (since_days,))
+                """
+            )
             result = cursor.fetchone()
             avg_session_duration = result['avg_session_duration'] if result and result['avg_session_duration'] else 0
         else:
             # Fallback sessions approximation: per-student per-day conversations
-            cursor.execute("""
+            cursor.execute(
+                f"""
                 SELECT COUNT(*) AS total_chats
                 FROM (
                     SELECT student_id, DATE(created_at) AS day_key
                     FROM conversation_history
-                    WHERE created_at >= DATE_SUB(CURDATE(), INTERVAL %s DAY)
+                    WHERE created_at >= DATE_SUB(CURDATE(), INTERVAL {since_days} DAY)
                     GROUP BY student_id, DATE(created_at)
                 ) d
-            """, (since_days,))
+                """
+            )
             result = cursor.fetchone()
             total_chats = result['total_chats'] if result else 0
 
-            cursor.execute("""
+            cursor.execute(
+                f"""
                 SELECT AVG(day_messages) as avg_messages_per_session
                 FROM (
                     SELECT student_id, DATE(created_at) AS day_key, COUNT(*) AS day_messages
                     FROM conversation_history
-                    WHERE created_at >= DATE_SUB(CURDATE(), INTERVAL %s DAY)
+                    WHERE created_at >= DATE_SUB(CURDATE(), INTERVAL {since_days} DAY)
                     GROUP BY student_id, DATE(created_at)
                 ) day_counts
-            """, (since_days,))
+                """
+            )
             result = cursor.fetchone()
             avg_messages_per_session = result['avg_messages_per_session'] if result and result['avg_messages_per_session'] else 0
 
-            cursor.execute("""
+            cursor.execute(
+                f"""
                 SELECT AVG(day_duration_minutes) AS avg_session_duration
                 FROM (
                     SELECT student_id, DATE(created_at) AS day_key,
                            TIMESTAMPDIFF(MINUTE, MIN(created_at), MAX(created_at)) AS day_duration_minutes
                     FROM conversation_history
-                    WHERE created_at >= DATE_SUB(CURDATE(), INTERVAL %s DAY)
+                    WHERE created_at >= DATE_SUB(CURDATE(), INTERVAL {since_days} DAY)
                     GROUP BY student_id, DATE(created_at)
                     HAVING COUNT(*) > 1
                 ) day_durations
-            """, (since_days,))
+                """
+            )
             result = cursor.fetchone()
             avg_session_duration = result['avg_session_duration'] if result and result['avg_session_duration'] else 0
         
         # Unique students with activity (always last 7 days for this stat)
-        cursor.execute("""
+        cursor.execute(
+            """
             SELECT COUNT(DISTINCT student_id) as unique_active_students
             FROM conversation_history 
             WHERE created_at >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)
-        """)
+            """
+        )
         result = cursor.fetchone()
         unique_active_students = result['unique_active_students'] if result else 0
         
@@ -806,13 +822,15 @@ def get_topic_analysis(cursor, since_days: int = 30):
     """Analyze topics and subjects most commonly asked by students"""
     try:
         # Get all student messages for topic analysis
-        cursor.execute("""
+        cursor.execute(
+            f"""
             SELECT message, student_id, created_at
             FROM conversation_history 
             WHERE role = 'student' 
-              AND created_at >= DATE_SUB(CURDATE(), INTERVAL %s DAY)
+              AND created_at >= DATE_SUB(CURDATE(), INTERVAL {since_days} DAY)
             ORDER BY created_at DESC
-        """, (since_days,))
+            """
+        )
         messages = cursor.fetchall()
         
         # Simple topic extraction based on keywords
@@ -868,13 +886,15 @@ def get_sentiment_analysis(cursor, since_days: int = 30):
         positive_keywords = ['good', 'great', 'awesome', 'amazing', 'love', 'like', 'excited', 'happy', 'wonderful', 'fantastic', 'excellent', 'perfect', 'thank', 'helpful', 'understand', 'clear', 'easy']
         negative_keywords = ['bad', 'terrible', 'awful', 'hate', 'difficult', 'confused', 'frustrated', 'angry', 'sad', 'worried', 'stressed', 'hard', 'complicated', "don't understand", 'stuck']
         
-        cursor.execute("""
+        cursor.execute(
+            f"""
             SELECT message, created_at, student_id
             FROM conversation_history 
             WHERE role = 'student' 
-              AND created_at >= DATE_SUB(CURDATE(), INTERVAL %s DAY)
+              AND created_at >= DATE_SUB(CURDATE(), INTERVAL {since_days} DAY)
             ORDER BY created_at DESC
-        """, (since_days,))
+            """
+        )
         messages = cursor.fetchall()
         
         sentiment_counts = {'positive': 0, 'negative': 0, 'neutral': 0}
@@ -925,7 +945,8 @@ def get_progress_indicators(cursor, since_days: int = 30):
     """Track progress indicators like question depth and sentiment positivity over time"""
     try:
         # Question depth analysis (based on message length and complexity)
-        cursor.execute("""
+        cursor.execute(
+            f"""
             SELECT 
                 student_id,
                 DATE(created_at) as date,
@@ -933,10 +954,11 @@ def get_progress_indicators(cursor, since_days: int = 30):
                 COUNT(*) as daily_messages
             FROM conversation_history 
             WHERE role = 'student' 
-              AND created_at >= DATE_SUB(CURDATE(), INTERVAL %s DAY)
+              AND created_at >= DATE_SUB(CURDATE(), INTERVAL {since_days} DAY)
             GROUP BY student_id, DATE(created_at)
             ORDER BY student_id, date
-        """, (since_days,))
+            """
+        )
         progress_data = cursor.fetchall()
         
         # Calculate growth trends
@@ -988,12 +1010,14 @@ def get_academic_focus(cursor, since_days: int = 30):
             'Health & PE': ['health', 'exercise', 'nutrition', 'body', 'fitness', 'wellness', 'medical', 'disease', 'sports', 'physical education']
         }
         
-        cursor.execute("""
+        cursor.execute(
+            f"""
             SELECT message, student_id
             FROM conversation_history 
             WHERE role = 'student' 
-              AND created_at >= DATE_SUB(CURDATE(), INTERVAL %s DAY)
-        """, (since_days,))
+              AND created_at >= DATE_SUB(CURDATE(), INTERVAL {since_days} DAY)
+            """
+        )
         messages = cursor.fetchall()
         
         subject_counts = {}
@@ -1038,12 +1062,14 @@ def get_curiosity_metrics(cursor, since_days: int = 30):
         factual_patterns = ['what is', 'when', 'where', 'who', 'define', 'list', 'name', 'identify', 'calculate', 'solve', 'find']
         
         # Do not require '?' so we capture conversational prompts too
-        cursor.execute("""
+        cursor.execute(
+            f"""
             SELECT message
             FROM conversation_history 
             WHERE role = 'student' 
-              AND created_at >= DATE_SUB(CURDATE(), INTERVAL %s DAY)
-        """, (since_days,))
+              AND created_at >= DATE_SUB(CURDATE(), INTERVAL {since_days} DAY)
+            """
+        )
         questions = cursor.fetchall()
         
         open_ended_count = 0
