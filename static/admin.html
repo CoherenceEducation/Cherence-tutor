@@ -466,7 +466,19 @@
         
         <!-- Comprehensive Analytics Section -->
         <div class="analytics-section">
-            <h2 style="margin-bottom: 2rem; color: #023047; font-size: 1.5rem;">📊 Comprehensive Analytics</h2>
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom: 1rem;">
+                <h2 style="color: #023047; font-size: 1.5rem;">📊 Comprehensive Analytics</h2>
+                <div style="display:flex; align-items:center; gap:8px;">
+                    <label for="compRangeSelect" style="font-size: 0.875rem; color:#64748b;">Time range:</label>
+                    <select id="compRangeSelect" class="search-box" style="max-width: 200px; margin:0;">
+                        <option value="7">Last 7 days</option>
+                        <option value="30" selected>Last 30 days</option>
+                        <option value="90">Last 90 days</option>
+                        <option value="36500">All time</option>
+                    </select>
+                    <button class="btn btn-secondary" id="compReloadBtn">Reload</button>
+                </div>
+            </div>
             
             <!-- Engagement Metrics -->
             <div class="analytics-grid">
@@ -569,15 +581,6 @@
                 <div class="card-content">
                     <div class="loading" id="analyticsLoading">Loading analytics...</div>
                     <div id="analyticsContent"></div>
-                    <div style="margin-top: 12px; display:flex; align-items:center; gap:8px;">
-                        <label for="rangeSelect" style="font-size: 0.875rem; color:#64748b;">Time range:</label>
-                        <select id="rangeSelect" class="search-box" style="max-width: 180px; margin:0;">
-                            <option value="7">Last 7 days</option>
-                            <option value="30" selected>Last 30 days</option>
-                            <option value="90">Last 90 days</option>
-                        </select>
-                        <button class="btn btn-secondary" id="reloadRangeBtn">Reload</button>
-                    </div>
                 </div>
             </div>
         </div>
@@ -852,7 +855,7 @@
         // Load comprehensive analytics
         async function loadComprehensiveAnalytics() {
             try {
-                const days = document.getElementById('rangeSelect')?.value || 30;
+                const days = document.getElementById('compRangeSelect')?.value || 30;
                 const response = await fetch(`${API_URL}/api/admin/comprehensive-analytics?days=${days}`, {
                     headers: {
                         'Authorization': `Bearer ${authToken}`
