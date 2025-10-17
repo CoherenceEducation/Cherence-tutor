@@ -902,7 +902,7 @@ def get_sentiment_analysis(cursor, since_days: int = 30):
         
         for message in messages:
             message_text = message['message'].lower()
-            date_key = message['created_at'].date().isoformat()
+            date = message['created_at'].date()
             
             positive_score = sum(1 for word in positive_keywords if word in message_text)
             negative_score = sum(1 for word in negative_keywords if word in message_text)
@@ -916,9 +916,9 @@ def get_sentiment_analysis(cursor, since_days: int = 30):
             
             sentiment_counts[sentiment] += 1
             
-            if date_key not in daily_sentiment:
-                daily_sentiment[date_key] = {'positive': 0, 'negative': 0, 'neutral': 0}
-            daily_sentiment[date_key][sentiment] += 1
+            if date not in daily_sentiment:
+                daily_sentiment[date] = {'positive': 0, 'negative': 0, 'neutral': 0}
+            daily_sentiment[date][sentiment] += 1
         
         # Calculate percentages
         total_messages = sum(sentiment_counts.values())
@@ -967,10 +967,8 @@ def get_progress_indicators(cursor, since_days: int = 30):
             student_id = row['student_id']
             if student_id not in student_progress:
                 student_progress[student_id] = []
-            # Ensure date is serialized as ISO string for JSON
-            date_iso = row['date'].isoformat() if hasattr(row['date'], 'isoformat') else str(row['date'])
             student_progress[student_id].append({
-                'date': date_iso,
+                'date': row['date'],
                 'avg_length': row['avg_message_length'],
                 'message_count': row['daily_messages']
             })
@@ -987,16 +985,14 @@ def get_progress_indicators(cursor, since_days: int = 30):
         return {
             'students_with_growth': growing_students,
             'total_tracked_students': len(student_progress),
-            'growth_percentage': round((growing_students / len(student_progress) * 100), 1) if student_progress else 0,
-            'series_by_student': student_progress
+            'growth_percentage': round((growing_students / len(student_progress) * 100), 1) if student_progress else 0
         }
     except Error as e:
         print(f"Error fetching progress indicators: {e}")
         return {
             'students_with_growth': 0,
             'total_tracked_students': 0,
-            'growth_percentage': 0,
-            'series_by_student': {}
+            'growth_percentage': 0
         }
 
 def get_academic_focus(cursor, since_days: int = 30):
