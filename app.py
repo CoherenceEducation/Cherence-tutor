@@ -43,7 +43,7 @@ CORS(app, origins=allowed_origins or [
     "https://classes.coherenceeducation.org",
     "https://coherenceeducation.learnworlds.com",
     "https://df3e8ea9dd4c.ngrok-free.app",
-    "https://coherence-tutor.vercel.app"
+    "https://cherence-tutor.vercel.app"
 ], supports_credentials=True)
 
 # --- Admin email list (ENV-driven, with safe fallback) ---
@@ -439,6 +439,7 @@ def admin_comprehensive_analytics():
         days = 0
     analytics = get_comprehensive_analytics(days)
     return jsonify(analytics), 200
+
 
 @app.route('/chat', methods=['GET'])
 def chat_ui():
