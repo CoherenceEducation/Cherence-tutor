@@ -1125,3 +1125,242 @@ def _interval_clause(since_days: int) -> str:
     except Exception:
         days = 0
     return "" if days <= 0 else f" AND created_at >= DATE_SUB(CURDATE(), INTERVAL {days} DAY)"
+
+
+
+# Add these new functions to your utils/db.py file
+
+def get_student_specific_analytics(student_id, since_days=30):
+    """Get comprehensive analytics for a specific student"""
+    conn = get_db_connection()
+    if not conn:
+        print("⚠️ Database not available - returning empty analytics")
+        return {}
+    
+    cursor = conn.cursor(dictionary=True)
+    try:
+        # Basic student info
+        cursor.execute("""
+            SELECT * FROM students 
+            WHERE student_id = %s
+        """, (student_id,))
+        student_info = cursor.fetchone()
+        
+        if not student_info:
+            return {"error": "Student not found"}
+        
+        interval = _interval_clause(since_days)
+        
+        # Message count and activity
+        cursor.execute(f"""
+            SELECT 
+                COUNT(*) as total_messages,
+                COUNT(DISTINCT DATE(created_at)) as active_days,
+                MIN(created_at) as first_message,
+                MAX(created_at) as last_message
+            FROM conversation_history 
+            WHERE student_id = %s{interval}
+        """, (student_id,))
+        activity_stats = cursor.fetchone()
+        
+        # Session analysis
+        cursor.execute(f"""
+            SELECT 
+                COUNT(DISTINCT session_id) as total_sessions,
+                AVG(session_length) as avg_session_length
+            FROM (
+                SELECT 
+                    session_id,
+                    COUNT(*) as session_length
+                FROM conversation_history 
+                WHERE student_id = %s 
+                AND session_id IS NOT NULL{interval}
+                GROUP BY session_id
+            ) sessions
+        """, (student_id,))
+        session_stats = cursor.fetchone()
+        
+        # Topic preferences
+        cursor.execute(f"""
+            SELECT message
+            FROM conversation_history 
+            WHERE student_id = %s 
+            AND role = 'student'{interval}
+        """, (student_id,))
+        messages = cursor.fetchall()
+        
+        # Analyze topics
+        topic_keywords = {
+            'Mathematics': ['math', 'algebra', 'geometry', 'calculus', 'equation'],
+            'Science': ['science', 'physics', 'chemistry', 'biology', 'experiment'],
+            'English': ['english', 'grammar', 'writing', 'essay', 'literature'],
+            'History': ['history', 'historical', 'war', 'ancient', 'century'],
+            'Technology': ['computer', 'programming', 'code', 'software', 'technology'],
+            'Art': ['art', 'drawing', 'painting', 'creative', 'design'],
+            'Music': ['music', 'song', 'instrument', 'piano', 'guitar']
+        }
+        
+        topic_counts = {}
+        sentiment_scores = {'positive': 0, 'negative': 0, 'neutral': 0}
+        question_types = {'open_ended': 0, 'factual': 0}
+        
+        positive_keywords = ['good', 'great', 'love', 'excited', 'thank', 'understand']
+        negative_keywords = ['bad', 'difficult', 'confused', 'frustrated', "don't understand"]
+        open_patterns = ['why', 'how', 'explain', 'describe', 'what if']
+        factual_patterns = ['what is', 'when', 'where', 'who', 'define']
+        
+        for msg in messages:
+            text = msg['message'].lower()
+            
+            # Topic analysis
+            for topic, keywords in topic_keywords.items():
+                if any(kw in text for kw in keywords):
+                    topic_counts[topic] = topic_counts.get(topic, 0) + 1
+            
+            # Sentiment analysis
+            pos_score = sum(1 for kw in positive_keywords if kw in text)
+            neg_score = sum(1 for kw in negative_keywords if kw in text)
+            if pos_score > neg_score:
+                sentiment_scores['positive'] += 1
+            elif neg_score > pos_score:
+                sentiment_scores['negative'] += 1
+            else:
+                sentiment_scores['neutral'] += 1
+            
+            # Question type analysis
+            if any(p in text for p in open_patterns):
+                question_types['open_ended'] += 1
+            elif any(p in text for p in factual_patterns):
+                question_types['factual'] += 1
+        
+        # Message length progression
+        cursor.execute(f"""
+            SELECT 
+                DATE(created_at) as date,
+                AVG(LENGTH(message)) as avg_length,
+                COUNT(*) as message_count
+            FROM conversation_history 
+            WHERE student_id = %s 
+            AND role = 'student'{interval}
+            GROUP BY DATE(created_at)
+            ORDER BY date
+        """, (student_id,))
+        progression_data = cursor.fetchall()
+        
+        # Response time stats
+        cursor.execute(f"""
+            SELECT 
+                AVG(response_time_ms) as avg_response_time,
+                MIN(response_time_ms) as min_response_time,
+                MAX(response_time_ms) as max_response_time
+            FROM conversation_history 
+            WHERE student_id = %s 
+            AND response_time_ms IS NOT NULL{interval}
+        """, (student_id,))
+        response_stats = cursor.fetchone()
+        
+        # Calculate engagement score (0-100)
+        engagement_score = 0
+        if activity_stats:
+            days_active = activity_stats.get('active_days', 0)
+            total_msgs = activity_stats.get('total_messages', 0)
+            
+            # Score components
+            activity_score = min((days_active / since_days) * 40, 40)  # Max 40 points
+            volume_score = min((total_msgs / 50) * 30, 30)  # Max 30 points
+            diversity_score = min(len(topic_counts) * 5, 30)  # Max 30 points
+            
+            engagement_score = round(activity_score + volume_score + diversity_score, 1)
+        
+        # Top 5 topics for this student
+        top_topics = sorted(topic_counts.items(), key=lambda x: x[1], reverse=True)[:5]
+        
+        # Calculate sentiment percentages
+        total_sentiment = sum(sentiment_scores.values())
+        sentiment_percentages = {}
+        if total_sentiment > 0:
+            for key, val in sentiment_scores.items():
+                sentiment_percentages[key] = round((val / total_sentiment) * 100, 1)
+        
+        # Calculate question type percentages
+        total_questions = sum(question_types.values())
+        question_percentages = {}
+        if total_questions > 0:
+            for key, val in question_types.items():
+                question_percentages[key] = round((val / total_questions) * 100, 1)
+        
+        return {
+            'student_info': student_info,
+            'activity': {
+                'total_messages': activity_stats.get('total_messages', 0) if activity_stats else 0,
+                'active_days': activity_stats.get('active_days', 0) if activity_stats else 0,
+                'first_message': activity_stats.get('first_message') if activity_stats else None,
+                'last_message': activity_stats.get('last_message') if activity_stats else None,
+                'total_sessions': session_stats.get('total_sessions', 0) if session_stats else 0,
+                'avg_session_length': round(float(session_stats.get('avg_session_length', 0)), 1) if session_stats else 0
+            },
+            'engagement_score': engagement_score,
+            'topics': {
+                'top_topics': [{'topic': t[0], 'count': t[1]} for t in top_topics],
+                'total_topics': len(topic_counts)
+            },
+            'sentiment': {
+                'distribution': sentiment_percentages,
+                'counts': sentiment_scores
+            },
+            'curiosity': {
+                'question_types': question_percentages,
+                'counts': question_types
+            },
+            'progression': [
+                {
+                    'date': row['date'].isoformat() if hasattr(row['date'], 'isoformat') else str(row['date']),
+                    'avg_length': float(row.get('avg_length', 0)),
+                    'message_count': int(row.get('message_count', 0))
+                }
+                for row in progression_data
+            ],
+            'response_times': {
+                'avg_ms': round(float(response_stats.get('avg_response_time', 0)), 1) if response_stats else 0,
+                'min_ms': round(float(response_stats.get('min_response_time', 0)), 1) if response_stats else 0,
+                'max_ms': round(float(response_stats.get('max_response_time', 0)), 1) if response_stats else 0
+            }
+        }
+        
+    except Exception as e:
+        print(f"Error fetching student-specific analytics: {e}")
+        import traceback
+        traceback.print_exc()
+        return {}
+    finally:
+        cursor.close()
+        conn.close()
+
+
+def search_students(query):
+    """Search students by name or email"""
+    conn = get_db_connection()
+    if not conn:
+        return []
+    
+    cursor = conn.cursor(dictionary=True)
+    try:
+        cursor.execute("""
+            SELECT 
+                s.*,
+                COUNT(c.id) as message_count,
+                MAX(c.created_at) as last_message_at
+            FROM students s
+            LEFT JOIN conversation_history c ON s.student_id = c.student_id
+            WHERE s.name LIKE %s OR s.email LIKE %s
+            GROUP BY s.student_id
+            ORDER BY s.last_active DESC
+            LIMIT 20
+        """, (f"%{query}%", f"%{query}%"))
+        return cursor.fetchall()
+    except Error as e:
+        print(f"Error searching students: {e}")
+        return []
+    finally:
+        cursor.close()
+        conn.close()

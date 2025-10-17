@@ -23,23 +23,120 @@
             color: white;
             padding: 2rem;
             box-shadow: 0 4px 20px rgba(2, 48, 71, 0.1);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        
+        .header-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
         
         .header h1 {
-            font-size: 2rem;
+            font-size: 1.5rem;
             font-weight: 700;
-            margin-bottom: 0.5rem;
         }
         
-        .header p {
-            opacity: 0.9;
-            font-size: 1.1rem;
+        .view-toggle {
+            display: flex;
+            gap: 0.5rem;
+            background: rgba(255,255,255,0.2);
+            padding: 0.25rem;
+            border-radius: 8px;
+        }
+        
+        .view-toggle button {
+            padding: 0.5rem 1rem;
+            border: none;
+            background: transparent;
+            color: white;
+            cursor: pointer;
+            border-radius: 6px;
+            font-weight: 500;
+            transition: background 0.2s;
+        }
+        
+        .view-toggle button.active {
+            background: rgba(255,255,255,0.3);
         }
         
         .container {
             max-width: 1400px;
             margin: 0 auto;
             padding: 2rem;
+        }
+        
+        .search-section {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 12px;
+            margin-bottom: 2rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+        
+        .search-box {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.2s;
+        }
+        
+        .search-box:focus {
+            outline: none;
+            border-color: #023047;
+        }
+        
+        .search-results {
+            margin-top: 1rem;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        
+        .student-item {
+            padding: 0.75rem;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            margin-bottom: 0.5rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .student-item:hover {
+            background: #f8fafc;
+            border-color: #023047;
+        }
+        
+        .student-info h4 {
+            color: #023047;
+            margin-bottom: 0.25rem;
+        }
+        
+        .student-info p {
+            font-size: 0.875rem;
+            color: #64748b;
+        }
+        
+        .student-stats {
+            text-align: right;
+            font-size: 0.875rem;
+            color: #64748b;
+        }
+        
+        .view {
+            display: none;
+        }
+        
+        .view.active {
+            display: block;
         }
         
         .stats-grid {
@@ -79,192 +176,124 @@
             margin-bottom: 0.5rem;
         }
         
-        .stat-card .change {
-            font-size: 0.875rem;
-            color: #10b981;
-        }
-        
-        .dashboard-grid {
-            display: grid;
-            grid-template-columns: 2fr 1fr;
-            gap: 2rem;
-            margin-bottom: 2rem;
-        }
-        
         .card {
             background: white;
             border-radius: 12px;
             box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
             border: 1px solid #e2e8f0;
-            overflow: hidden;
+            margin-bottom: 1.5rem;
         }
         
         .card-header {
             padding: 1.25rem 1.5rem;
             border-bottom: 1px solid #e5e7eb;
-            background: linear-gradient(180deg,#f8fafc 0%, #f1f5f9 100%);
+            background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
+        
         .card-header h2 {
-            font-size: 1.1rem;
+            font-size: 1.25rem;
             font-weight: 700;
             color: #0f172a;
         }
-        .table th,
-        .table td {
-            padding: 0.6rem 0.75rem;
-            border-bottom: 1px solid #eef2f7;
-        }
-        .badge-success { background: #e8fff3; color: #065f46; }
-        .badge-warning { background: #fff7ed; color: #9a3412; }
-        .badge-danger  { background: #fef2f2; color: #b91c1c; }
-        .stat-card .number { font-size: 2rem; }
-        .analytics-header h3 { font-weight: 700; }
-        .topic-item { border: 1px solid #eef2f7; background: #fff; }
-        .metric-label { color: #334155; }
-        .metric-value { color: #0f172a; }
         
         .card-content {
             padding: 1.5rem;
         }
         
-        .table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-        
-        .table th {
-            background: #f8fafc;
-            font-weight: 600;
-            color: #374151;
-            font-size: 0.875rem;
-        }
-        
-        .table tbody tr:hover {
-            background: #f8fafc;
-        }
-        
-        .badge {
-            display: inline-block;
-            padding: 0.25rem 0.75rem;
-            border-radius: 9999px;
-            font-size: 0.75rem;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-        }
-        
-        .badge-success {
-            background: #dcfce7;
-            color: #166534;
-        }
-        
-        .badge-warning {
-            background: #fef3c7;
-            color: #92400e;
-        }
-        
-        .badge-danger {
-            background: #fee2e2;
-            color: #991b1b;
-        }
-        
-        .btn {
-            display: inline-flex;
+        .metric-item {
+            display: flex;
+            justify-content: space-between;
             align-items: center;
-            padding: 0.5rem 1rem;
-            border-radius: 6px;
-            font-size: 0.875rem;
+            padding: 0.75rem 0;
+            border-bottom: 1px solid #f1f5f9;
+        }
+        
+        .metric-item:last-child {
+            border-bottom: none;
+        }
+        
+        .metric-label {
             font-weight: 500;
-            text-decoration: none;
-            border: none;
-            cursor: pointer;
-            transition: all 0.2s ease;
+            color: #334155;
         }
         
-        .btn-primary {
-            background: #023047;
-            color: white;
+        .metric-value {
+            font-weight: 600;
+            color: #023047;
+            font-size: 1.125rem;
         }
         
-        .btn-primary:hover {
-            background: #011a2a;
+        .topic-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.75rem;
+            background: #f8fafc;
+            border-radius: 6px;
+            margin-bottom: 0.5rem;
+            border: 1px solid #e2e8f0;
         }
         
-        .btn-secondary {
-            background: #e2e8f0;
-            color: #374151;
+        .progress-chart {
+            margin-top: 1rem;
         }
         
-        .btn-secondary:hover {
-            background: #cbd5e1;
+        .progress-bar-container {
+            height: 8px;
+            background: #e5e7eb;
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 0.5rem 0;
         }
         
-        .loading {
+        .progress-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #10b981, #059669);
+            border-radius: 4px;
+            transition: width 0.3s ease;
+        }
+        
+        .engagement-score {
+            text-align: center;
+            padding: 2rem;
+        }
+        
+        .score-circle {
+            width: 150px;
+            height: 150px;
+            margin: 0 auto 1rem;
+            border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
+            font-size: 3rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+            box-shadow: 0 4px 20px rgba(16, 185, 129, 0.3);
+        }
+        
+        .loading {
+            text-align: center;
             padding: 2rem;
             color: #64748b;
         }
         
-        .error {
-            background: #fee2e2;
-            color: #991b1b;
-            padding: 1rem;
-            border-radius: 6px;
-            margin: 1rem 0;
-        }
-        
-        .search-box {
-            width: 100%;
-            padding: 0.75rem;
-            border: 1px solid #d1d5db;
-            border-radius: 6px;
-            font-size: 0.875rem;
-            margin-bottom: 1rem;
-        }
-        
-        .search-box:focus {
-            outline: none;
-            border-color: #023047;
-            box-shadow: 0 0 0 3px rgba(2, 48, 71, 0.1);
-        }
-        
-        .tabs {
-            display: flex;
-            border-bottom: 1px solid #e2e8f0;
-            margin-bottom: 1.5rem;
-        }
-        
-        .tab {
-            padding: 0.75rem 1.5rem;
+        .back-button {
+            background: #e2e8f0;
+            color: #374151;
+            padding: 0.5rem 1rem;
             border: none;
-            background: none;
+            border-radius: 6px;
             cursor: pointer;
             font-weight: 500;
-            color: #64748b;
-            border-bottom: 2px solid transparent;
-            transition: all 0.2s ease;
+            transition: background 0.2s;
         }
         
-        .tab.active {
-            color: #023047;
-            border-bottom-color: #023047;
-        }
-        
-        .tab-content {
-            display: none;
-        }
-        
-        .tab-content.active {
-            display: block;
-        }
-        
-        .student-details {
-            background: #f8fafc;
-            padding: 1rem;
-            border-radius: 6px;
-            margin: 1rem 0;
+        .back-button:hover {
+            background: #cbd5e1;
         }
         
         .conversation-item {
@@ -292,302 +321,108 @@
             margin-top: 0.5rem;
         }
         
-        .analytics-section {
-            margin-bottom: 3rem;
-        }
-        
         .analytics-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
             gap: 1.5rem;
-            margin-bottom: 2rem;
-        }
-        
-        .analytics-card {
-            background: white;
-            border-radius: 12px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
-            border: 1px solid #e2e8f0;
-            overflow: hidden;
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
-        }
-        
-        .analytics-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-        }
-        
-        .analytics-header {
-            padding: 1rem 1.5rem;
-            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
-            border-bottom: 1px solid #e2e8f0;
-        }
-        
-        .analytics-header h3 {
-            font-size: 1rem;
-            font-weight: 600;
-            color: #023047;
-            margin: 0;
-        }
-        
-        .analytics-content {
-            padding: 1.5rem;
-        }
-        
-        .metric-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 0.5rem 0;
-            border-bottom: 1px solid #f1f5f9;
-        }
-        
-        .metric-item:last-child {
-            border-bottom: none;
-        }
-        
-        .metric-label {
-            font-weight: 500;
-            color: #374151;
-        }
-        
-        .metric-value {
-            font-weight: 600;
-            color: #023047;
-        }
-        
-        .topic-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 0.75rem;
-            background: #f8fafc;
-            border-radius: 6px;
-            margin-bottom: 0.5rem;
-        }
-        
-        .topic-name {
-            font-weight: 500;
-            color: #374151;
-        }
-        
-        .topic-stats {
-            font-size: 0.875rem;
-            color: #64748b;
-        }
-        
-        .sentiment-bar {
-            display: flex;
-            height: 8px;
-            border-radius: 4px;
-            overflow: hidden;
-            margin: 0.5rem 0;
-        }
-        
-        .sentiment-positive {
-            background: #10b981;
-        }
-        
-        .sentiment-neutral {
-            background: #6b7280;
-        }
-        
-        .sentiment-negative {
-            background: #ef4444;
-        }
-        
-        .progress-indicator {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            padding: 0.5rem 0;
-        }
-        
-        .progress-bar {
-            flex: 1;
-            height: 6px;
-            background: #e5e7eb;
-            border-radius: 3px;
-            overflow: hidden;
-        }
-        
-        .progress-fill {
-            height: 100%;
-            background: linear-gradient(90deg, #10b981, #059669);
-            border-radius: 3px;
         }
         
         @media (max-width: 768px) {
-            .dashboard-grid {
+            .stats-grid, .analytics-grid {
                 grid-template-columns: 1fr;
-            }
-            
-            .stats-grid {
-                grid-template-columns: 1fr;
-            }
-            
-            .analytics-grid {
-                grid-template-columns: 1fr;
-            }
-            
-            .container {
-                padding: 1rem;
             }
         }
     </style>
 </head>
 <body>
     <div class="header">
-        <div class="container">
+        <div class="header-content">
             <h1>🎓 Coherence AI Tutor - Admin Dashboard</h1>
-            <p>Comprehensive platform management and analytics</p>
+            <div class="view-toggle">
+                <button class="active" onclick="switchView('platform')">Platform Overview</button>
+                <button onclick="switchView('student')">Student Analytics</button>
+            </div>
         </div>
     </div>
     
     <div class="container">
-        <!-- Stats Overview -->
-        <div class="stats-grid" id="statsGrid">
-            <div class="stat-card">
-                <h3>Total Students</h3>
-                <div class="number" id="totalStudents">-</div>
-                <div class="change">Active users</div>
-            </div>
-            <div class="stat-card">
-                <h3>Total Messages</h3>
-                <div class="number" id="totalMessages">-</div>
-                <div class="change">All conversations</div>
-            </div>
-            <div class="stat-card">
-                <h3>Active Today</h3>
-                <div class="number" id="activeToday">-</div>
-                <div class="change">Last 24 hours</div>
-            </div>
-            <div class="stat-card">
-                <h3>Flagged Content</h3>
-                <div class="number" id="flaggedContent">-</div>
-                <div class="change">Requires review</div>
-            </div>
-        </div>
-        
-        <!-- Comprehensive Analytics Section -->
-        <div class="analytics-section">
-            <h2 style="margin-bottom: 2rem; color: #023047; font-size: 1.5rem;">📊 Comprehensive Analytics</h2>
-            
-            <!-- Engagement Metrics -->
-            <div class="analytics-grid">
-                <div class="analytics-card">
-                    <div class="analytics-header">
-                        <h3>💬 Engagement Metrics</h3>
-                    </div>
-                    <div class="analytics-content" id="engagementMetrics">
-                        <div class="loading">Loading engagement data...</div>
-                    </div>
+        <!-- Platform Overview -->
+        <div id="platformView" class="view active">
+            <div class="stats-grid" id="platformStats">
+                <div class="stat-card">
+                    <h3>Total Students</h3>
+                    <div class="number" id="totalStudents">-</div>
                 </div>
-                
-                <div class="analytics-card">
-                    <div class="analytics-header">
-                        <h3>🎯 Academic Focus</h3>
-                    </div>
-                    <div class="analytics-content" id="academicFocus">
-                        <div class="loading">Loading academic data...</div>
-                    </div>
+                <div class="stat-card">
+                    <h3>Total Messages</h3>
+                    <div class="number" id="totalMessages">-</div>
                 </div>
-                
-                <div class="analytics-card">
-                    <div class="analytics-header">
-                        <h3>🧠 Curiosity & Creativity</h3>
-                    </div>
-                    <div class="analytics-content" id="curiosityMetrics">
-                        <div class="loading">Loading curiosity data...</div>
-                    </div>
+                <div class="stat-card">
+                    <h3>Active Today</h3>
+                    <div class="number" id="activeToday">-</div>
                 </div>
-                
-                <div class="analytics-card">
-                    <div class="analytics-header">
-                        <h3>📈 Progress Indicators</h3>
-                    </div>
-                    <div class="analytics-content" id="progressIndicators">
-                        <div class="loading">Loading progress data...</div>
-                    </div>
-                </div>
-                
-                <div class="analytics-card">
-                    <div class="analytics-header">
-                        <h3>😊 Wellbeing & Tone</h3>
-                    </div>
-                    <div class="analytics-content" id="sentimentAnalysis">
-                        <div class="loading">Loading sentiment data...</div>
-                    </div>
-                </div>
-                
-                <div class="analytics-card">
-                    <div class="analytics-header">
-                        <h3>📚 Topic Analysis</h3>
-                    </div>
-                    <div class="analytics-content" id="topicAnalysis">
-                        <div class="loading">Loading topic data...</div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        <!-- Main Dashboard -->
-        <div class="dashboard-grid">
-            <!-- Students and Conversations -->
-            <div class="card">
-                <div class="card-header">
-                    <h2>Students & Conversations</h2>
-                </div>
-                <div class="card-content">
-                    <div class="tabs">
-                        <button class="tab active" onclick="switchTab('students')">Students</button>
-                        <button class="tab" onclick="switchTab('conversations')">Recent Conversations</button>
-                        <button class="tab" onclick="switchTab('flagged')">Flagged Content</button>
-                    </div>
-                    
-                    <!-- Students Tab -->
-                    <div id="students" class="tab-content active">
-                        <input type="text" class="search-box" placeholder="Search students..." id="studentSearch">
-                        <div class="loading" id="studentsLoading">Loading students...</div>
-                        <div id="studentsList"></div>
-                    </div>
-                    
-                    <!-- Conversations Tab -->
-                    <div id="conversations" class="tab-content">
-                        <div class="loading" id="conversationsLoading">Loading conversations...</div>
-                        <div id="conversationsList"></div>
-                    </div>
-                    
-                    <!-- Flagged Content Tab -->
-                    <div id="flagged" class="tab-content">
-                        <div class="loading" id="flaggedLoading">Loading flagged content...</div>
-                        <div id="flaggedList"></div>
-                    </div>
+                <div class="stat-card">
+                    <h3>Flagged Content</h3>
+                    <div class="number" id="flaggedContent">-</div>
                 </div>
             </div>
             
-            <!-- Analytics -->
-            <div class="card">
+            <div class="analytics-grid" id="platformAnalytics">
+                <!-- Platform analytics will be loaded here -->
+            </div>
+        </div>
+        
+        <!-- Student Analytics View -->
+        <div id="studentView" class="view">
+            <div class="search-section">
+                <input 
+                    type="text" 
+                    class="search-box" 
+                    id="studentSearch" 
+                    placeholder="Search students by name or email..."
+                    oninput="searchStudents(this.value)"
+                />
+                <div id="searchResults" class="search-results"></div>
+            </div>
+            
+            <div id="studentDetails" style="display: none;">
                 <div class="card-header">
-                    <h2>Platform Analytics</h2>
+                    <h2 id="studentName">Student Name</h2>
+                    <button class="back-button" onclick="clearStudentView()">← Back to Search</button>
                 </div>
-                <div class="card-content">
-                    <div class="loading" id="analyticsLoading">Loading analytics...</div>
-                    <div id="analyticsContent"></div>
+                
+                <div class="card">
+                    <div class="card-content">
+                        <div class="engagement-score">
+                            <div class="score-circle" id="engagementScore">-</div>
+                            <h3>Engagement Score</h3>
+                            <p style="color: #64748b;">Based on activity, volume, and topic diversity</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="stats-grid" id="studentStats"></div>
+                <div class="analytics-grid" id="studentAnalytics"></div>
+                
+                <div class="card">
+                    <div class="card-header">
+                        <h2>Recent Conversations</h2>
+                    </div>
+                    <div class="card-content" id="studentConversations">
+                        <div class="loading">Loading conversations...</div>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
     <script>
-        // Configuration
         const API_URL = 'https://cherence-tutor.vercel.app';
         let authToken = null;
         let currentStudentId = null;
+        let searchTimeout = null;
         
-        // Initialize dashboard
         async function initializeDashboard() {
-            // Check for admin token in URL or localStorage
             const urlParams = new URLSearchParams(window.location.search);
             const urlToken = urlParams.get('token');
             const savedToken = localStorage.getItem('admin_token');
@@ -601,541 +436,359 @@
             }
             
             if (!authToken) {
-                showError('Admin authentication required. Please access through LearnWorlds.');
+                alert('Admin authentication required');
                 return;
             }
             
-            console.log("✅ Admin dashboard initialized");
-            await loadDashboardData();
+            await loadPlatformData();
         }
         
-        // Load all dashboard data
-        async function loadDashboardData() {
-            try {
-                await Promise.all([
-                    loadStats(),
-                    loadStudents(),
-                    loadConversations(),
-                    loadFlaggedContent(),
-                    loadAnalytics(),
-                    loadComprehensiveAnalytics()
-                ]);
-            } catch (error) {
-                console.error('Error loading dashboard data:', error);
-                showError('Failed to load dashboard data. Please refresh the page.');
+        function switchView(view) {
+            document.querySelectorAll('.view-toggle button').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            document.getElementById('platformView').classList.remove('active');
+            document.getElementById('studentView').classList.remove('active');
+            
+            if (view === 'platform') {
+                document.getElementById('platformView').classList.add('active');
+                loadPlatformData();
+            } else {
+                document.getElementById('studentView').classList.add('active');
             }
         }
         
-        // Load platform statistics
-        async function loadStats() {
+        async function loadPlatformData() {
             try {
                 const response = await fetch(`${API_URL}/api/admin/stats`, {
-                    headers: {
-                        'Authorization': `Bearer ${authToken}`
-                    }
+                    headers: { 'Authorization': `Bearer ${authToken}` }
                 });
                 
                 if (!response.ok) throw new Error('Failed to load stats');
                 
                 const stats = await response.json();
-                
                 document.getElementById('totalStudents').textContent = stats.total_students || 0;
                 document.getElementById('totalMessages').textContent = stats.total_messages || 0;
                 document.getElementById('activeToday').textContent = stats.active_today || 0;
                 document.getElementById('flaggedContent').textContent = stats.flagged_count || 0;
                 
+                await loadComprehensiveAnalytics();
             } catch (error) {
-                console.error('Error loading stats:', error);
+                console.error('Error loading platform data:', error);
             }
         }
         
-        // Load students list
-        async function loadStudents() {
-            try {
-                const response = await fetch(`${API_URL}/api/admin/students?limit=50`, {
-                    headers: {
-                        'Authorization': `Bearer ${authToken}`
-                    }
-                });
-                
-                if (!response.ok) throw new Error('Failed to load students');
-                
-                const data = await response.json();
-                displayStudents(data.students);
-                
-            } catch (error) {
-                console.error('Error loading students:', error);
-                document.getElementById('studentsLoading').innerHTML = '<div class="error">Failed to load students</div>';
-            }
-        }
-        
-        // Display students
-        function displayStudents(students) {
-            const container = document.getElementById('studentsList');
-            const loading = document.getElementById('studentsLoading');
-            
-            loading.style.display = 'none';
-            
-            if (students.length === 0) {
-                container.innerHTML = '<div class="error">No students found</div>';
-                return;
-            }
-            
-            const html = `
-                <table class="table">
-                    <thead>
-                        <tr>
-                            <th>Name</th>
-                            <th>Email</th>
-                            <th>Messages</th>
-                            <th>Last Active</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${students.map(student => `
-                            <tr>
-                                <td>${student.name || 'Unknown'}</td>
-                                <td>${student.email}</td>
-                                <td>${student.total_messages || 0}</td>
-                                <td>${formatDate(student.last_active)}</td>
-                                <td>
-                                    <button class="btn btn-primary" onclick="viewStudentConversations('${student.student_id}')">
-                                        View Conversations
-                                    </button>
-                                </td>
-                            </tr>
-                        `).join('')}
-                    </tbody>
-                </table>
-            `;
-            
-            container.innerHTML = html;
-        }
-        
-        // Load conversations
-        async function loadConversations() {
-            try {
-                const response = await fetch(`${API_URL}/api/admin/conversations?limit=20`, {
-                    headers: {
-                        'Authorization': `Bearer ${authToken}`
-                    }
-                });
-                
-                if (!response.ok) throw new Error('Failed to load conversations');
-                
-                const data = await response.json();
-                displayConversations(data.conversations);
-                
-            } catch (error) {
-                console.error('Error loading conversations:', error);
-                document.getElementById('conversationsLoading').innerHTML = '<div class="error">Failed to load conversations</div>';
-            }
-        }
-        
-        // Display conversations
-        function displayConversations(conversations) {
-            const container = document.getElementById('conversationsList');
-            const loading = document.getElementById('conversationsLoading');
-            
-            loading.style.display = 'none';
-            
-            if (conversations.length === 0) {
-                container.innerHTML = '<div class="error">No conversations found</div>';
-                return;
-            }
-            
-            const html = conversations.map(conv => `
-                <div class="conversation-item">
-                    <div class="role">${conv.role === 'student' ? '👤 Student' : '🤖 AI Tutor'}</div>
-                    <div class="message">${conv.message}</div>
-                    <div class="timestamp">${formatDate(conv.created_at)} - ${conv.name || 'Unknown'}</div>
-                </div>
-            `).join('');
-            
-            container.innerHTML = html;
-        }
-        
-        // Load flagged content
-        async function loadFlaggedContent() {
-            try {
-                const response = await fetch(`${API_URL}/api/admin/flagged`, {
-                    headers: {
-                        'Authorization': `Bearer ${authToken}`
-                    }
-                });
-                
-                if (!response.ok) throw new Error('Failed to load flagged content');
-                
-                const data = await response.json();
-                displayFlaggedContent(data.flagged);
-                
-            } catch (error) {
-                console.error('Error loading flagged content:', error);
-                document.getElementById('flaggedLoading').innerHTML = '<div class="error">Failed to load flagged content</div>';
-            }
-        }
-        
-        // Display flagged content
-        function displayFlaggedContent(flagged) {
-            const container = document.getElementById('flaggedList');
-            const loading = document.getElementById('flaggedLoading');
-            
-            loading.style.display = 'none';
-            
-            if (flagged.length === 0) {
-                container.innerHTML = '<div class="error">No flagged content found</div>';
-                return;
-            }
-            
-            const html = flagged.map(flag => `
-                <div class="conversation-item">
-                    <div class="role">🚩 Flagged Content</div>
-                    <div class="message">${flag.message_text}</div>
-                    <div class="timestamp">
-                        ${formatDate(flag.flagged_at)} - ${flag.reason}
-                        <br>Student: ${flag.name || 'Unknown'} (${flag.student_id})
-                    </div>
-                </div>
-            `).join('');
-            
-            container.innerHTML = html;
-        }
-        
-        // Load analytics
-        async function loadAnalytics() {
-            try {
-                const response = await fetch(`${API_URL}/api/admin/analytics`, {
-                    headers: {
-                        'Authorization': `Bearer ${authToken}`
-                    }
-                });
-                
-                if (!response.ok) throw new Error('Failed to load analytics');
-                
-                const analytics = await response.json();
-                displayAnalytics(analytics);
-                
-            } catch (error) {
-                console.error('Error loading analytics:', error);
-                document.getElementById('analyticsLoading').innerHTML = '<div class="error">Failed to load analytics</div>';
-            }
-        }
-        
-        // Display analytics
-        function displayAnalytics(analytics) {
-            const container = document.getElementById('analyticsContent');
-            const loading = document.getElementById('analyticsLoading');
-            
-            loading.style.display = 'none';
-            
-            const html = `
-                <div class="student-details">
-                    <h3>📊 Platform Insights</h3>
-                    <p><strong>Average Response Time:</strong> ${analytics.response_stats?.avg_response_time ? Math.round(analytics.response_stats.avg_response_time) + 'ms' : 'N/A'}</p>
-                    <p><strong>Top Active Students (7 days):</strong></p>
-                    <ul>
-                        ${(analytics.top_students || []).slice(0, 5).map(student => 
-                            `<li>${student.name || 'Unknown'} - ${student.message_count} messages</li>`
-                        ).join('')}
-                    </ul>
-                </div>
-            `;
-            
-            container.innerHTML = html;
-        }
-        
-        // Load comprehensive analytics
         async function loadComprehensiveAnalytics() {
             try {
                 const response = await fetch(`${API_URL}/api/admin/comprehensive-analytics`, {
-                    headers: {
-                        'Authorization': `Bearer ${authToken}`
-                    }
+                    headers: { 'Authorization': `Bearer ${authToken}` }
                 });
                 
-                if (!response.ok) {
-                    console.warn('Comprehensive analytics endpoint failed, showing empty data');
-                    displayComprehensiveAnalytics({
-                        engagement: {},
-                        topics: {},
-                        sentiment: {},
-                        progress: {},
-                        academic_focus: {},
-                        curiosity: {}
-                    });
-                    return;
-                }
+                if (!response.ok) return;
                 
                 const analytics = await response.json();
-                displayComprehensiveAnalytics(analytics);
-                
+                displayPlatformAnalytics(analytics);
             } catch (error) {
                 console.error('Error loading comprehensive analytics:', error);
-                displayComprehensiveAnalytics({
-                    engagement: {},
-                    topics: {},
-                    sentiment: {},
-                    progress: {},
-                    academic_focus: {},
-                    curiosity: {}
-                });
             }
         }
         
-        // Display comprehensive analytics
-        function displayComprehensiveAnalytics(analytics) {
-            // Engagement Metrics
-            displayEngagementMetrics(analytics.engagement || {});
-            
-            // Academic Focus
-            displayAcademicFocus(analytics.academic_focus || {});
-            
-            // Curiosity & Creativity
-            displayCuriosityMetrics(analytics.curiosity || {});
-            
-            // Progress Indicators
-            displayProgressIndicators(analytics.progress || {});
-            
-            // Sentiment Analysis
-            displaySentimentAnalysis(analytics.sentiment || {});
-            
-            // Topic Analysis
-            displayTopicAnalysis(analytics.topics || {});
-        }
-        
-        // Display engagement metrics
-        function displayEngagementMetrics(engagement) {
-            const container = document.getElementById('engagementMetrics');
+        function displayPlatformAnalytics(analytics) {
+            const container = document.getElementById('platformAnalytics');
             container.innerHTML = `
-                <div class="metric-item">
-                    <span class="metric-label">Total Chats</span>
-                    <span class="metric-value">${engagement.total_chats || 0}</span>
-                </div>
-                <div class="metric-item">
-                    <span class="metric-label">Avg Messages/Session</span>
-                    <span class="metric-value">${engagement.avg_messages_per_session || 0}</span>
-                </div>
-                <div class="metric-item">
-                    <span class="metric-label">Avg Session Duration</span>
-                    <span class="metric-value">${engagement.avg_session_duration_minutes || 0} min</span>
-                </div>
-                <div class="metric-item">
-                    <span class="metric-label">Active Students (7d)</span>
-                    <span class="metric-value">${engagement.unique_active_students_7d || 0}</span>
-                </div>
-            `;
-        }
-        
-        // Display academic focus
-        function displayAcademicFocus(academic) {
-            const container = document.getElementById('academicFocus');
-            const topSubjects = academic.top_5_subjects || [];
-            
-            const html = topSubjects.length > 0 ? 
-                topSubjects.map(subject => `
-                    <div class="topic-item">
-                        <span class="topic-name">${subject.subject}</span>
-                        <span class="topic-stats">${subject.question_count} questions (${subject.unique_students} students)</span>
+                <div class="card">
+                    <div class="card-header"><h2>💬 Engagement Metrics</h2></div>
+                    <div class="card-content">
+                        <div class="metric-item">
+                            <span class="metric-label">Total Chats</span>
+                            <span class="metric-value">${analytics.engagement?.total_chats || 0}</span>
+                        </div>
+                        <div class="metric-item">
+                            <span class="metric-label">Avg Messages/Session</span>
+                            <span class="metric-value">${analytics.engagement?.avg_messages_per_session || 0}</span>
+                        </div>
+                        <div class="metric-item">
+                            <span class="metric-label">Active Students (7d)</span>
+                            <span class="metric-value">${analytics.engagement?.unique_active_students_7d || 0}</span>
+                        </div>
                     </div>
-                `).join('') : 
-                '<div class="metric-item"><span class="metric-label">No academic data available</span></div>';
-            
-            container.innerHTML = html;
-        }
-        
-        // Display curiosity metrics
-        function displayCuriosityMetrics(curiosity) {
-            const container = document.getElementById('curiosityMetrics');
-            container.innerHTML = `
-                <div class="metric-item">
-                    <span class="metric-label">Total Questions Analyzed</span>
-                    <span class="metric-value">${curiosity.total_questions_analyzed || 0}</span>
                 </div>
-                <div class="metric-item">
-                    <span class="metric-label">Open-ended Questions</span>
-                    <span class="metric-value">${curiosity.open_ended_percentage || 0}%</span>
+                
+                <div class="card">
+                    <div class="card-header"><h2>📚 Top Topics</h2></div>
+                    <div class="card-content">
+                        ${(analytics.topics?.top_topics || []).slice(0, 5).map(topic => `
+                            <div class="topic-item">
+                                <span>${topic.topic}</span>
+                                <span>${topic.total_questions} questions</span>
+                            </div>
+                        `).join('')}
+                    </div>
                 </div>
-                <div class="metric-item">
-                    <span class="metric-label">Factual Questions</span>
-                    <span class="metric-value">${curiosity.factual_percentage || 0}%</span>
-                </div>
-                <div class="progress-indicator">
-                    <span style="font-size: 0.875rem; color: #64748b;">Open-ended vs Factual</span>
-                    <div class="progress-bar">
-                        <div class="progress-fill" style="width: ${curiosity.open_ended_percentage || 0}%"></div>
+                
+                <div class="card">
+                    <div class="card-header"><h2>😊 Sentiment</h2></div>
+                    <div class="card-content">
+                        <div class="metric-item">
+                            <span class="metric-label">Positive</span>
+                            <span class="metric-value">${analytics.sentiment?.sentiment_distribution?.positive || 0}%</span>
+                        </div>
+                        <div class="metric-item">
+                            <span class="metric-label">Neutral</span>
+                            <span class="metric-value">${analytics.sentiment?.sentiment_distribution?.neutral || 0}%</span>
+                        </div>
+                        <div class="metric-item">
+                            <span class="metric-label">Negative</span>
+                            <span class="metric-value">${analytics.sentiment?.sentiment_distribution?.negative || 0}%</span>
+                        </div>
                     </div>
                 </div>
             `;
         }
         
-        // Display progress indicators
-        function displayProgressIndicators(progress) {
-            const container = document.getElementById('progressIndicators');
-            container.innerHTML = `
-                <div class="metric-item">
-                    <span class="metric-label">Students with Growth</span>
-                    <span class="metric-value">${progress.students_with_growth || 0}</span>
-                </div>
-                <div class="metric-item">
-                    <span class="metric-label">Total Tracked Students</span>
-                    <span class="metric-value">${progress.total_tracked_students || 0}</span>
-                </div>
-                <div class="metric-item">
-                    <span class="metric-label">Growth Percentage</span>
-                    <span class="metric-value">${progress.growth_percentage || 0}%</span>
-                </div>
-                <div class="progress-indicator">
-                    <span style="font-size: 0.875rem; color: #64748b;">Student Growth Rate</span>
-                    <div class="progress-bar">
-                        <div class="progress-fill" style="width: ${progress.growth_percentage || 0}%"></div>
+        async function searchStudents(query) {
+            clearTimeout(searchTimeout);
+            
+            if (query.length < 2) {
+                document.getElementById('searchResults').innerHTML = '';
+                return;
+            }
+            
+            searchTimeout = setTimeout(async () => {
+                try {
+                    const response = await fetch(`${API_URL}/api/admin/students/search?q=${encodeURIComponent(query)}`, {
+                        headers: { 'Authorization': `Bearer ${authToken}` }
+                    });
+                    
+                    if (!response.ok) throw new Error('Search failed');
+                    
+                    const data = await response.json();
+                    displaySearchResults(data.students);
+                } catch (error) {
+                    console.error('Error searching students:', error);
+                }
+            }, 300);
+        }
+        
+        function displaySearchResults(students) {
+            const container = document.getElementById('searchResults');
+            
+            if (students.length === 0) {
+                container.innerHTML = '<p style="padding: 1rem; text-align: center; color: #64748b;">No students found</p>';
+                return;
+            }
+            
+            container.innerHTML = students.map(student => `
+                <div class="student-item" onclick="loadStudentAnalytics('${student.student_id}')">
+                    <div class="student-info">
+                        <h4>${student.name || 'Unknown'}</h4>
+                        <p>${student.email}</p>
+                    </div>
+                    <div class="student-stats">
+                        <div>${student.message_count || 0} messages</div>
+                        <div style="font-size: 0.75rem;">Last active: ${formatDate(student.last_message_at)}</div>
                     </div>
                 </div>
-            `;
+            `).join('');
         }
         
-        // Display sentiment analysis
-        function displaySentimentAnalysis(sentiment) {
-            const container = document.getElementById('sentimentAnalysis');
-            const distribution = sentiment.sentiment_distribution || {};
-            
-            container.innerHTML = `
-                <div class="metric-item">
-                    <span class="metric-label">Total Messages Analyzed</span>
-                    <span class="metric-value">${sentiment.total_analyzed || 0}</span>
-                </div>
-                <div class="metric-item">
-                    <span class="metric-label">Positive Sentiment</span>
-                    <span class="metric-value">${distribution.positive || 0}%</span>
-                </div>
-                <div class="metric-item">
-                    <span class="metric-label">Neutral Sentiment</span>
-                    <span class="metric-value">${distribution.neutral || 0}%</span>
-                </div>
-                <div class="metric-item">
-                    <span class="metric-label">Negative Sentiment</span>
-                    <span class="metric-value">${distribution.negative || 0}%</span>
-                </div>
-                <div class="sentiment-bar">
-                    <div class="sentiment-positive" style="width: ${distribution.positive || 0}%"></div>
-                    <div class="sentiment-neutral" style="width: ${distribution.neutral || 0}%"></div>
-                    <div class="sentiment-negative" style="width: ${distribution.negative || 0}%"></div>
-                </div>
-            `;
-        }
-        
-        // Display topic analysis
-        function displayTopicAnalysis(topics) {
-            const container = document.getElementById('topicAnalysis');
-            const topTopics = topics.top_topics || [];
-            
-            const html = topTopics.length > 0 ? 
-                topTopics.slice(0, 5).map(topic => `
-                    <div class="topic-item">
-                        <span class="topic-name">${topic.topic}</span>
-                        <span class="topic-stats">${topic.total_questions} questions (${topic.unique_students} students)</span>
-                    </div>
-                `).join('') : 
-                '<div class="metric-item"><span class="metric-label">No topic data available</span></div>';
-            
-            container.innerHTML = html;
-        }
-        
-        // View student conversations
-        async function viewStudentConversations(studentId) {
+        async function loadStudentAnalytics(studentId) {
             currentStudentId = studentId;
+            document.getElementById('searchResults').innerHTML = '';
+            document.getElementById('studentDetails').style.display = 'block';
             
             try {
-                const response = await fetch(`${API_URL}/api/admin/student/${studentId}/conversations`, {
-                    headers: {
-                        'Authorization': `Bearer ${authToken}`
-                    }
+                // Load student analytics
+                const analyticsResponse = await fetch(`${API_URL}/api/admin/student/${studentId}/analytics?days=30`, {
+                    headers: { 'Authorization': `Bearer ${authToken}` }
                 });
                 
-                if (!response.ok) throw new Error('Failed to load student conversations');
+                if (!analyticsResponse.ok) throw new Error('Failed to load student analytics');
                 
-                const data = await response.json();
-                displayStudentConversations(data.conversations, studentId);
+                const analytics = await analyticsResponse.json();
+                displayStudentAnalytics(analytics);
+                
+                // Load conversations
+                const conversationsResponse = await fetch(`${API_URL}/api/admin/student/${studentId}/conversations?limit=20`, {
+                    headers: { 'Authorization': `Bearer ${authToken}` }
+                });
+                
+                if (!conversationsResponse.ok) throw new Error('Failed to load conversations');
+                
+                const conversations = await conversationsResponse.json();
+                displayStudentConversations(conversations.conversations);
                 
             } catch (error) {
-                console.error('Error loading student conversations:', error);
-                showError('Failed to load student conversations');
+                console.error('Error loading student analytics:', error);
+                alert('Failed to load student data');
             }
         }
         
-        // Display student conversations
-        function displayStudentConversations(conversations, studentId) {
-            const modal = document.createElement('div');
-            modal.style.cssText = `
-                position: fixed;
-                top: 0;
-                left: 0;
-                right: 0;
-                bottom: 0;
-                background: rgba(0, 0, 0, 0.5);
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                z-index: 1000;
-            `;
+        function displayStudentAnalytics(analytics) {
+            const info = analytics.student_info;
+            const activity = analytics.activity;
             
-            const content = document.createElement('div');
-            content.style.cssText = `
-                background: white;
-                border-radius: 12px;
-                padding: 2rem;
-                max-width: 800px;
-                max-height: 80vh;
-                overflow-y: auto;
-                margin: 2rem;
-            `;
+            document.getElementById('studentName').textContent = `${info.name || 'Unknown'} (${info.email})`;
+            document.getElementById('engagementScore').textContent = analytics.engagement_score || 0;
             
-            const html = `
-                <h2>Student Conversations - ${studentId}</h2>
-                <button onclick="this.closest('.modal').remove()" style="float: right; background: #e2e8f0; border: none; padding: 0.5rem; border-radius: 4px; cursor: pointer;">Close</button>
-                <div style="clear: both; margin-top: 1rem;">
-                    ${conversations.map(conv => `
-                        <div class="conversation-item">
-                            <div class="role">${conv.role === 'student' ? '👤 Student' : '🤖 AI Tutor'}</div>
-                            <div class="message">${conv.message}</div>
-                            <div class="timestamp">${formatDate(conv.created_at)}</div>
-                        </div>
-                    `).join('')}
+            // Activity stats
+            document.getElementById('studentStats').innerHTML = `
+                <div class="stat-card">
+                    <h3>Total Messages</h3>
+                    <div class="number">${activity.total_messages}</div>
+                </div>
+                <div class="stat-card">
+                    <h3>Active Days</h3>
+                    <div class="number">${activity.active_days}</div>
+                </div>
+                <div class="stat-card">
+                    <h3>Total Sessions</h3>
+                    <div class="number">${activity.total_sessions}</div>
+                </div>
+                <div class="stat-card">
+                    <h3>Avg Session Length</h3>
+                    <div class="number">${activity.avg_session_length}</div>
                 </div>
             `;
             
-            content.innerHTML = html;
-            modal.className = 'modal';
-            modal.appendChild(content);
-            document.body.appendChild(modal);
+            // Detailed analytics
+            document.getElementById('studentAnalytics').innerHTML = `
+                <div class="card">
+                    <div class="card-header"><h2>📚 Top Topics</h2></div>
+                    <div class="card-content">
+                        ${analytics.topics.top_topics.length > 0 ? 
+                            analytics.topics.top_topics.map(topic => `
+                                <div class="topic-item">
+                                    <span>${topic.topic}</span>
+                                    <span>${topic.count} mentions</span>
+                                </div>
+                            `).join('') :
+                            '<p style="color: #64748b;">No topics identified yet</p>'
+                        }
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div class="card-header"><h2>😊 Sentiment Distribution</h2></div>
+                    <div class="card-content">
+                        <div class="metric-item">
+                            <span class="metric-label">Positive</span>
+                            <span class="metric-value">${analytics.sentiment.distribution.positive || 0}%</span>
+                        </div>
+                        <div class="metric-item">
+                            <span class="metric-label">Neutral</span>
+                            <span class="metric-value">${analytics.sentiment.distribution.neutral || 0}%</span>
+                        </div>
+                        <div class="metric-item">
+                            <span class="metric-label">Negative</span>
+                            <span class="metric-value">${analytics.sentiment.distribution.negative || 0}%</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div class="card-header"><h2>🧠 Question Types</h2></div>
+                    <div class="card-content">
+                        <div class="metric-item">
+                            <span class="metric-label">Open-ended</span>
+                            <span class="metric-value">${analytics.curiosity.question_types.open_ended || 0}%</span>
+                        </div>
+                        <div class="metric-item">
+                            <span class="metric-label">Factual</span>
+                            <span class="metric-value">${analytics.curiosity.question_types.factual || 0}%</span>
+                        </div>
+                        <div class="progress-bar-container">
+                            <div class="progress-bar-fill" style="width: ${analytics.curiosity.question_types.open_ended || 0}%"></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div class="card-header"><h2>📈 Message Length Progression</h2></div>
+                    <div class="card-content">
+                        ${analytics.progression.length > 0 ? 
+                            `<div class="progress-chart">
+                                ${analytics.progression.slice(-10).map(day => `
+                                    <div style="margin-bottom: 0.75rem;">
+                                        <div style="display: flex; justify-content: space-between; font-size: 0.875rem; margin-bottom: 0.25rem;">
+                                            <span>${formatDate(day.date)}</span>
+                                            <span>${Math.round(day.avg_length)} chars avg</span>
+                                        </div>
+                                        <div class="progress-bar-container">
+                                            <div class="progress-bar-fill" style="width: ${Math.min((day.avg_length / 500) * 100, 100)}%"></div>
+                                        </div>
+                                    </div>
+                                `).join('')}
+                            </div>` :
+                            '<p style="color: #64748b;">No progression data available</p>'
+                        }
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div class="card-header"><h2>⚡ Response Times</h2></div>
+                    <div class="card-content">
+                        <div class="metric-item">
+                            <span class="metric-label">Average</span>
+                            <span class="metric-value">${analytics.response_times.avg_ms}ms</span>
+                        </div>
+                        <div class="metric-item">
+                            <span class="metric-label">Fastest</span>
+                            <span class="metric-value">${analytics.response_times.min_ms}ms</span>
+                        </div>
+                        <div class="metric-item">
+                            <span class="metric-label">Slowest</span>
+                            <span class="metric-value">${analytics.response_times.max_ms}ms</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div class="card-header"><h2>📅 Activity Timeline</h2></div>
+                    <div class="card-content">
+                        <div class="metric-item">
+                            <span class="metric-label">First Message</span>
+                            <span class="metric-value">${formatDate(activity.first_message)}</span>
+                        </div>
+                        <div class="metric-item">
+                            <span class="metric-label">Last Message</span>
+                            <span class="metric-value">${formatDate(activity.last_message)}</span>
+                        </div>
+                    </div>
+                </div>
+            `;
         }
         
-        // Tab switching
-        function switchTab(tabName) {
-            // Remove active class from all tabs and content
-            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
-            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+        function displayStudentConversations(conversations) {
+            const container = document.getElementById('studentConversations');
             
-            // Add active class to selected tab and content
-            event.target.classList.add('active');
-            document.getElementById(tabName).classList.add('active');
+            if (conversations.length === 0) {
+                container.innerHTML = '<p style="color: #64748b;">No conversations found</p>';
+                return;
+            }
+            
+            container.innerHTML = conversations.map(conv => `
+                <div class="conversation-item">
+                    <div class="role">${conv.role === 'student' ? '👤 Student' : '🤖 AI Tutor'}</div>
+                    <div class="message">${conv.message}</div>
+                    <div class="timestamp">${formatDate(conv.created_at)}</div>
+                </div>
+            `).join('');
         }
         
-        // Utility functions
+        function clearStudentView() {
+            currentStudentId = null;
+            document.getElementById('studentDetails').style.display = 'none';
+            document.getElementById('studentSearch').value = '';
+            document.getElementById('searchResults').innerHTML = '';
+        }
+        
         function formatDate(dateString) {
             if (!dateString) return 'Unknown';
             const date = new Date(dateString);
             return date.toLocaleString();
         }
         
-        function showError(message) {
-            const errorDiv = document.createElement('div');
-            errorDiv.className = 'error';
-            errorDiv.textContent = message;
-            document.querySelector('.container').insertBefore(errorDiv, document.querySelector('.stats-grid'));
-        }
-        
-        // Initialize on load
         document.addEventListener('DOMContentLoaded', initializeDashboard);
     </script>
 </body>

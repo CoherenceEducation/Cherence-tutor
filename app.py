@@ -27,6 +27,7 @@ from utils.db import (
     create_admins_table
 )
 from utils.gemini_client import get_tutor_response, check_content_safety
+from utils.db import get_student_specific_analytics, search_students
 
 load_dotenv()
 
@@ -504,6 +505,43 @@ def add_security_headers(resp):
     resp.headers["Cross-Origin-Opener-Policy"] = "same-origin-allow-popups"
     resp.headers["Cross-Origin-Embedder-Policy"] = "unsafe-none"
     return resp
+
+
+
+@app.route('/api/admin/student/<student_id>/analytics', methods=['GET'])
+@require_admin
+def admin_student_analytics(student_id):
+    """Admin: Get comprehensive analytics for a specific student"""
+    try:
+        days = int(request.args.get('days', 30))
+        analytics = get_student_specific_analytics(student_id, days)
+        
+        if 'error' in analytics:
+            return jsonify(analytics), 404
+        
+        return jsonify(analytics), 200
+    except Exception as e:
+        print(f"Error fetching student analytics: {e}")
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route('/api/admin/students/search', methods=['GET'])
+@require_admin
+def admin_search_students():
+    """Admin: Search students by name or email"""
+    query = request.args.get('q', '').strip()
+    
+    if len(query) < 2:
+        return jsonify({
+            "students": [],
+            "message": "Please enter at least 2 characters to search"
+        }), 400
+    
+    students = search_students(query)
+    return jsonify({
+        "students": students,
+        "count": len(students)
+    }), 200
 
 
 @app.route("/")
