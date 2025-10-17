@@ -468,16 +468,6 @@
         <div class="analytics-section">
             <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom: 1rem;">
                 <h2 style="color: #023047; font-size: 1.5rem;">📊 Comprehensive Analytics</h2>
-                <div style="display:flex; align-items:center; gap:8px;">
-                    <label for="compRangeSelect" style="font-size: 0.875rem; color:#64748b;">Time range:</label>
-                    <select id="compRangeSelect" class="search-box" style="max-width: 200px; margin:0;">
-                        <option value="7">Last 7 days</option>
-                        <option value="30" selected>Last 30 days</option>
-                        <option value="90">Last 90 days</option>
-                        <option value="36500">All time</option>
-                    </select>
-                    <button class="btn btn-secondary" id="compReloadBtn">Reload</button>
-                </div>
             </div>
             
             <!-- Engagement Metrics -->
@@ -855,8 +845,7 @@
         // Load comprehensive analytics
         async function loadComprehensiveAnalytics() {
             try {
-                const days = document.getElementById('compRangeSelect')?.value || 30;
-                const response = await fetch(`${API_URL}/api/admin/comprehensive-analytics?days=${days}`, {
+                const response = await fetch(`${API_URL}/api/admin/comprehensive-analytics`, {
                     headers: {
                         'Authorization': `Bearer ${authToken}`
                     }
