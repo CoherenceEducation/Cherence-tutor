@@ -144,11 +144,13 @@ def require_admin(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
         token = request.headers.get('Authorization')
+        if token and token.startswith('Bearer '):
+            token = token[7:]
+        # Fallback: check cookie-based session if no Authorization header
+        if not token:
+            token = request.cookies.get('admin_session')
         if not token:
             return jsonify({"error": "No token provided"}), 401
-        
-        if token.startswith('Bearer '):
-            token = token[7:]
         
         payload = verify_jwt_token(token)
         if not payload:
@@ -457,12 +459,16 @@ def admin_dashboard():
     if payload.get('role') != 'admin' or not is_admin_email(payload.get('email', '')):
         return jsonify({"error": "Admin access required"}), 403
 
-    # If you want: set a short-lived cookie for subsequent XHR from this origin
-    # resp = make_response(send_from_directory('static', 'admin.html'))
-    # resp.set_cookie('admin_session', token, max_age=3600, secure=True, samesite='None')
-    # return resp
-
-    return send_from_directory('static', 'admin.html')
+    # Set a short-lived cookie for subsequent XHR from this origin
+    resp = send_from_directory('static', 'admin.html')
+    try:
+        from flask import make_response
+        resp = make_response(resp)
+        # 1 hour cookie; secure/samesite for embedded usage
+        resp.set_cookie('admin_session', token, max_age=3600, secure=True, samesite='None')
+    except Exception:
+        pass
+    return resp
 
 
 @app.after_request
