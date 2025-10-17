@@ -13,19 +13,21 @@
         
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: #f8fafc;
+            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
             color: #334155;
             line-height: 1.6;
+            overflow-x: hidden;
         }
         
         .header {
-            background: linear-gradient(135deg, #023047 0%, #f7b538 100%);
+            background: linear-gradient(135deg, #023047 0%, #126782 50%, #f7b538 100%);
             color: white;
-            padding: 2rem;
-            box-shadow: 0 4px 20px rgba(2, 48, 71, 0.1);
+            padding: 1.5rem 2rem;
+            box-shadow: 0 4px 20px rgba(2, 48, 71, 0.2);
             position: sticky;
             top: 0;
             z-index: 100;
+            border-bottom: 3px solid #f7b538;
         }
         
         .header-content {
@@ -34,34 +36,57 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
+            gap: 2rem;
+        }
+        
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        
+        .logo {
+            font-size: 2rem;
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));
         }
         
         .header h1 {
             font-size: 1.5rem;
             font-weight: 700;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
         
         .view-toggle {
             display: flex;
             gap: 0.5rem;
-            background: rgba(255,255,255,0.2);
-            padding: 0.25rem;
-            border-radius: 8px;
+            background: rgba(255,255,255,0.15);
+            padding: 0.35rem;
+            border-radius: 12px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.2);
         }
         
         .view-toggle button {
-            padding: 0.5rem 1rem;
+            padding: 0.65rem 1.25rem;
             border: none;
             background: transparent;
             color: white;
             cursor: pointer;
-            border-radius: 6px;
-            font-weight: 500;
-            transition: background 0.2s;
+            border-radius: 8px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            font-size: 0.95rem;
+        }
+        
+        .view-toggle button:hover {
+            background: rgba(255,255,255,0.2);
+            transform: translateY(-1px);
         }
         
         .view-toggle button.active {
-            background: rgba(255,255,255,0.3);
+            background: rgba(247, 181, 56, 0.9);
+            color: #023047;
+            box-shadow: 0 4px 12px rgba(247, 181, 56, 0.3);
         }
         
         .container {
@@ -72,55 +97,146 @@
         
         .search-section {
             background: white;
-            padding: 1.5rem;
-            border-radius: 12px;
+            padding: 2rem;
+            border-radius: 16px;
             margin-bottom: 2rem;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            border: 1px solid #e2e8f0;
+        }
+        
+        .search-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+        
+        .search-header h2 {
+            font-size: 1.25rem;
+            color: #023047;
+            font-weight: 700;
+        }
+        
+        .view-all-btn {
+            padding: 0.5rem 1rem;
+            background: linear-gradient(135deg, #023047 0%, #126782 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            font-size: 0.9rem;
+        }
+        
+        .view-all-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(2, 48, 71, 0.3);
+        }
+        
+        .search-input-wrapper {
+            position: relative;
         }
         
         .search-box {
             width: 100%;
-            padding: 0.75rem 1rem;
+            padding: 1rem 1rem 1rem 3rem;
             border: 2px solid #e2e8f0;
-            border-radius: 8px;
+            border-radius: 12px;
             font-size: 1rem;
-            transition: border-color 0.2s;
+            transition: all 0.3s ease;
+            background: #f8fafc;
         }
         
         .search-box:focus {
             outline: none;
             border-color: #023047;
+            background: white;
+            box-shadow: 0 4px 12px rgba(2, 48, 71, 0.1);
+        }
+        
+        .search-icon {
+            position: absolute;
+            left: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #64748b;
+            font-size: 1.2rem;
         }
         
         .search-results {
-            margin-top: 1rem;
-            max-height: 300px;
+            margin-top: 1.5rem;
+            max-height: 450px;
             overflow-y: auto;
+            scroll-behavior: smooth;
+        }
+        
+        .search-results::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        .search-results::-webkit-scrollbar-track {
+            background: #f1f5f9;
+            border-radius: 4px;
+        }
+        
+        .search-results::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        
+        .search-results::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
         }
         
         .student-item {
-            padding: 0.75rem;
-            border: 1px solid #e2e8f0;
-            border-radius: 6px;
-            margin-bottom: 0.5rem;
+            padding: 1.25rem;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            margin-bottom: 0.75rem;
             cursor: pointer;
-            transition: all 0.2s;
+            transition: all 0.3s ease;
             display: flex;
             justify-content: space-between;
             align-items: center;
+            background: white;
         }
         
         .student-item:hover {
             background: #f8fafc;
             border-color: #023047;
+            transform: translateX(4px);
+            box-shadow: 0 4px 12px rgba(2, 48, 71, 0.1);
         }
         
-        .student-info h4 {
+        .student-info {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        
+        .student-avatar {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #023047 0%, #f7b538 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 700;
+            font-size: 1.25rem;
+            flex-shrink: 0;
+        }
+        
+        .student-details h4 {
             color: #023047;
             margin-bottom: 0.25rem;
+            font-size: 1.05rem;
+            font-weight: 600;
         }
         
-        .student-info p {
+        .student-details p {
             font-size: 0.875rem;
             color: #64748b;
         }
@@ -131,12 +247,40 @@
             color: #64748b;
         }
         
+        .student-stats .stat-badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            background: #f1f5f9;
+            border-radius: 6px;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: #023047;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 3rem 1rem;
+            color: #64748b;
+        }
+        
+        .empty-state-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+        
         .view {
             display: none;
+            animation: fadeIn 0.4s ease;
         }
         
         .view.active {
             display: block;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
         }
         
         .stats-grid {
@@ -148,16 +292,28 @@
         
         .stat-card {
             background: white;
-            padding: 1.5rem;
-            border-radius: 12px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            padding: 1.75rem;
+            border-radius: 16px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.06);
             border: 1px solid #e2e8f0;
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+            background: linear-gradient(135deg, #023047 0%, #f7b538 100%);
         }
         
         .stat-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            transform: translateY(-4px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.12);
         }
         
         .stat-card h3 {
@@ -166,28 +322,38 @@
             font-weight: 600;
             text-transform: uppercase;
             letter-spacing: 0.05em;
-            margin-bottom: 0.5rem;
+            margin-bottom: 0.75rem;
         }
         
         .stat-card .number {
-            font-size: 2rem;
+            font-size: 2.5rem;
             font-weight: 700;
             color: #023047;
             margin-bottom: 0.5rem;
+            background: linear-gradient(135deg, #023047 0%, #126782 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
         }
         
         .card {
             background: white;
-            border-radius: 12px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            border-radius: 16px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.06);
             border: 1px solid #e2e8f0;
             margin-bottom: 1.5rem;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+        
+        .card:hover {
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
         }
         
         .card-header {
-            padding: 1.25rem 1.5rem;
-            border-bottom: 1px solid #e5e7eb;
-            background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
+            padding: 1.5rem 1.75rem;
+            border-bottom: 2px solid #f1f5f9;
+            background: linear-gradient(180deg, #f8fafc 0%, #ffffff 100%);
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -200,14 +366,14 @@
         }
         
         .card-content {
-            padding: 1.5rem;
+            padding: 1.75rem;
         }
         
         .metric-item {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 0.75rem 0;
+            padding: 1rem 0;
             border-bottom: 1px solid #f1f5f9;
         }
         
@@ -218,32 +384,37 @@
         .metric-label {
             font-weight: 500;
             color: #334155;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
         }
         
         .metric-value {
-            font-weight: 600;
+            font-weight: 700;
             color: #023047;
-            font-size: 1.125rem;
+            font-size: 1.25rem;
         }
         
         .topic-item {
             display: flex;
             justify-content: space-between;
-            padding: 0.75rem;
-            background: #f8fafc;
-            border-radius: 6px;
-            margin-bottom: 0.5rem;
+            padding: 1rem;
+            background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+            border-radius: 10px;
+            margin-bottom: 0.75rem;
             border: 1px solid #e2e8f0;
+            transition: all 0.3s ease;
         }
         
-        .progress-chart {
-            margin-top: 1rem;
+        .topic-item:hover {
+            transform: translateX(4px);
+            border-color: #023047;
         }
         
         .progress-bar-container {
-            height: 8px;
+            height: 10px;
             background: #e5e7eb;
-            border-radius: 4px;
+            border-radius: 6px;
             overflow: hidden;
             margin: 0.5rem 0;
         }
@@ -251,74 +422,99 @@
         .progress-bar-fill {
             height: 100%;
             background: linear-gradient(90deg, #10b981, #059669);
-            border-radius: 4px;
-            transition: width 0.3s ease;
+            border-radius: 6px;
+            transition: width 0.5s ease;
         }
         
         .engagement-score {
             text-align: center;
-            padding: 2rem;
+            padding: 2.5rem;
         }
         
         .score-circle {
-            width: 150px;
-            height: 150px;
-            margin: 0 auto 1rem;
+            width: 180px;
+            height: 180px;
+            margin: 0 auto 1.5rem;
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 3rem;
+            font-size: 3.5rem;
             font-weight: 700;
             background: linear-gradient(135deg, #10b981 0%, #059669 100%);
             color: white;
-            box-shadow: 0 4px 20px rgba(16, 185, 129, 0.3);
+            box-shadow: 0 8px 30px rgba(16, 185, 129, 0.4);
+            position: relative;
+        }
+        
+        .score-circle::before {
+            content: '';
+            position: absolute;
+            inset: -4px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #10b981, #059669);
+            opacity: 0.3;
+            z-index: -1;
         }
         
         .loading {
             text-align: center;
             padding: 2rem;
             color: #64748b;
+            font-size: 1rem;
         }
         
         .back-button {
             background: #e2e8f0;
             color: #374151;
-            padding: 0.5rem 1rem;
+            padding: 0.65rem 1.25rem;
             border: none;
-            border-radius: 6px;
+            border-radius: 10px;
             cursor: pointer;
-            font-weight: 500;
-            transition: background 0.2s;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            font-size: 0.95rem;
         }
         
         .back-button:hover {
             background: #cbd5e1;
+            transform: translateX(-2px);
         }
         
         .conversation-item {
             background: white;
             border: 1px solid #e2e8f0;
-            border-radius: 6px;
-            padding: 1rem;
-            margin-bottom: 0.5rem;
+            border-radius: 12px;
+            padding: 1.25rem;
+            margin-bottom: 0.75rem;
+            transition: all 0.3s ease;
+        }
+        
+        .conversation-item:hover {
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
         }
         
         .conversation-item .role {
             font-weight: 600;
             color: #023047;
-            margin-bottom: 0.5rem;
+            margin-bottom: 0.75rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
         }
         
         .conversation-item .message {
             color: #374151;
-            line-height: 1.5;
+            line-height: 1.6;
+            padding: 0.75rem;
+            background: #f8fafc;
+            border-radius: 8px;
         }
         
         .conversation-item .timestamp {
             font-size: 0.75rem;
             color: #64748b;
-            margin-top: 0.5rem;
+            margin-top: 0.75rem;
         }
         
         .analytics-grid {
@@ -331,16 +527,66 @@
             .stats-grid, .analytics-grid {
                 grid-template-columns: 1fr;
             }
+            
+            .header-content {
+                flex-direction: column;
+                gap: 1rem;
+            }
+            
+            .view-toggle {
+                width: 100%;
+            }
+            
+            .view-toggle button {
+                flex: 1;
+            }
+            
+            .search-header {
+                flex-direction: column;
+                gap: 1rem;
+            }
+            
+            .view-all-btn {
+                width: 100%;
+            }
+        }
+        
+        .badge {
+            display: inline-block;
+            padding: 0.35rem 0.75rem;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        
+        .badge-success {
+            background: #d1fae5;
+            color: #065f46;
+        }
+        
+        .badge-warning {
+            background: #fef3c7;
+            color: #92400e;
+        }
+        
+        .badge-info {
+            background: #dbeafe;
+            color: #1e40af;
         }
     </style>
 </head>
 <body>
     <div class="header">
         <div class="header-content">
-            <h1>🎓 Coherence AI Tutor - Admin Dashboard</h1>
+            <div class="header-left">
+                <div class="logo">🎓</div>
+                <h1>Coherence AI Tutor - Admin Dashboard</h1>
+            </div>
             <div class="view-toggle">
-                <button class="active" onclick="switchView('platform')">Platform Overview</button>
-                <button onclick="switchView('student')">Student Analytics</button>
+                <button class="active" onclick="switchView('platform')">📊 Platform Overview</button>
+                <button onclick="switchView('student')">👥 Student Analytics</button>
             </div>
         </div>
     </div>
@@ -375,13 +621,20 @@
         <!-- Student Analytics View -->
         <div id="studentView" class="view">
             <div class="search-section">
-                <input 
-                    type="text" 
-                    class="search-box" 
-                    id="studentSearch" 
-                    placeholder="Search students by name or email..."
-                    oninput="searchStudents(this.value)"
-                />
+                <div class="search-header">
+                    <h2>🔍 Find Student</h2>
+                    <button class="view-all-btn" onclick="loadAllStudents()">📋 View All Students</button>
+                </div>
+                <div class="search-input-wrapper">
+                    <span class="search-icon">🔎</span>
+                    <input 
+                        type="text" 
+                        class="search-box" 
+                        id="studentSearch" 
+                        placeholder="Search by name or email..."
+                        oninput="searchStudents(this.value)"
+                    />
+                </div>
                 <div id="searchResults" class="search-results"></div>
             </div>
             
@@ -406,7 +659,7 @@
                 
                 <div class="card">
                     <div class="card-header">
-                        <h2>Recent Conversations</h2>
+                        <h2>💬 Recent Conversations</h2>
                     </div>
                     <div class="card-content" id="studentConversations">
                         <div class="loading">Loading conversations...</div>
@@ -421,6 +674,7 @@
         let authToken = null;
         let currentStudentId = null;
         let searchTimeout = null;
+        let allStudentsCache = null;
         
         async function initializeDashboard() {
             const urlParams = new URLSearchParams(window.location.search);
@@ -455,6 +709,9 @@
                 loadPlatformData();
             } else {
                 document.getElementById('studentView').classList.add('active');
+                if (!allStudentsCache) {
+                    loadAllStudents();
+                }
             }
         }
         
@@ -500,15 +757,15 @@
                     <div class="card-header"><h2>💬 Engagement Metrics</h2></div>
                     <div class="card-content">
                         <div class="metric-item">
-                            <span class="metric-label">Total Chats</span>
+                            <span class="metric-label">📚 Total Chats</span>
                             <span class="metric-value">${analytics.engagement?.total_chats || 0}</span>
                         </div>
                         <div class="metric-item">
-                            <span class="metric-label">Avg Messages/Session</span>
+                            <span class="metric-label">💭 Avg Messages/Session</span>
                             <span class="metric-value">${analytics.engagement?.avg_messages_per_session || 0}</span>
                         </div>
                         <div class="metric-item">
-                            <span class="metric-label">Active Students (7d)</span>
+                            <span class="metric-label">👥 Active Students (7d)</span>
                             <span class="metric-value">${analytics.engagement?.unique_active_students_7d || 0}</span>
                         </div>
                     </div>
@@ -519,26 +776,26 @@
                     <div class="card-content">
                         ${(analytics.topics?.top_topics || []).slice(0, 5).map(topic => `
                             <div class="topic-item">
-                                <span>${topic.topic}</span>
-                                <span>${topic.total_questions} questions</span>
+                                <span style="font-weight: 600;">${topic.topic}</span>
+                                <span class="badge badge-info">${topic.total_questions} questions</span>
                             </div>
-                        `).join('')}
+                        `).join('') || '<p class="empty-state">No topics identified yet</p>'}
                     </div>
                 </div>
                 
                 <div class="card">
-                    <div class="card-header"><h2>😊 Sentiment</h2></div>
+                    <div class="card-header"><h2>😊 Sentiment Analysis</h2></div>
                     <div class="card-content">
                         <div class="metric-item">
-                            <span class="metric-label">Positive</span>
+                            <span class="metric-label">😊 Positive</span>
                             <span class="metric-value">${analytics.sentiment?.sentiment_distribution?.positive || 0}%</span>
                         </div>
                         <div class="metric-item">
-                            <span class="metric-label">Neutral</span>
+                            <span class="metric-label">😐 Neutral</span>
                             <span class="metric-value">${analytics.sentiment?.sentiment_distribution?.neutral || 0}%</span>
                         </div>
                         <div class="metric-item">
-                            <span class="metric-label">Negative</span>
+                            <span class="metric-label">😟 Negative</span>
                             <span class="metric-value">${analytics.sentiment?.sentiment_distribution?.negative || 0}%</span>
                         </div>
                     </div>
@@ -546,11 +803,35 @@
             `;
         }
         
+        async function loadAllStudents() {
+            const container = document.getElementById('searchResults');
+            container.innerHTML = '<div class="loading">Loading all students...</div>';
+            
+            try {
+                const response = await fetch(`${API_URL}/api/admin/students?limit=100`, {
+                    headers: { 'Authorization': `Bearer ${authToken}` }
+                });
+                
+                if (!response.ok) throw new Error('Failed to load students');
+                
+                const data = await response.json();
+                allStudentsCache = data.students;
+                displaySearchResults(data.students);
+            } catch (error) {
+                console.error('Error loading all students:', error);
+                container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">⚠️</div><p>Failed to load students</p></div>';
+            }
+        }
+        
         async function searchStudents(query) {
             clearTimeout(searchTimeout);
             
             if (query.length < 2) {
-                document.getElementById('searchResults').innerHTML = '';
+                if (allStudentsCache) {
+                    displaySearchResults(allStudentsCache);
+                } else {
+                    document.getElementById('searchResults').innerHTML = '';
+                }
                 return;
             }
             
@@ -574,22 +855,39 @@
             const container = document.getElementById('searchResults');
             
             if (students.length === 0) {
-                container.innerHTML = '<p style="padding: 1rem; text-align: center; color: #64748b;">No students found</p>';
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">🔍</div>
+                        <p>No students found</p>
+                    </div>
+                `;
                 return;
             }
             
-            container.innerHTML = students.map(student => `
-                <div class="student-item" onclick="loadStudentAnalytics('${student.student_id}')">
-                    <div class="student-info">
-                        <h4>${student.name || 'Unknown'}</h4>
-                        <p>${student.email}</p>
+            container.innerHTML = students.map(student => {
+                const initials = (student.name || student.email || '?')
+                    .split(' ')
+                    .map(n => n[0])
+                    .join('')
+                    .toUpperCase()
+                    .substring(0, 2);
+                
+                return `
+                    <div class="student-item" onclick="loadStudentAnalytics('${student.student_id}')">
+                        <div class="student-info">
+                            <div class="student-avatar">${initials}</div>
+                            <div class="student-details">
+                                <h4>${student.name || 'Unknown'}</h4>
+                                <p>${student.email}</p>
+                            </div>
+                        </div>
+                        <div class="student-stats">
+                            <div class="stat-badge">${student.message_count || 0} messages</div>
+                            <div style="font-size: 0.75rem;">Last active: ${formatDate(student.last_message_at)}</div>
+                        </div>
                     </div>
-                    <div class="student-stats">
-                        <div>${student.message_count || 0} messages</div>
-                        <div style="font-size: 0.75rem;">Last active: ${formatDate(student.last_message_at)}</div>
-                    </div>
-                </div>
-            `).join('');
+                `;
+            }).join('');
         }
         
         async function loadStudentAnalytics(studentId) {
@@ -659,11 +957,11 @@
                         ${analytics.topics.top_topics.length > 0 ? 
                             analytics.topics.top_topics.map(topic => `
                                 <div class="topic-item">
-                                    <span>${topic.topic}</span>
-                                    <span>${topic.count} mentions</span>
+                                    <span style="font-weight: 600;">${topic.topic}</span>
+                                    <span class="badge badge-success">${topic.count} mentions</span>
                                 </div>
                             `).join('') :
-                            '<p style="color: #64748b;">No topics identified yet</p>'
+                            '<div class="empty-state"><div class="empty-state-icon">📚</div><p>No topics identified yet</p></div>'
                         }
                     </div>
                 </div>
@@ -672,15 +970,15 @@
                     <div class="card-header"><h2>😊 Sentiment Distribution</h2></div>
                     <div class="card-content">
                         <div class="metric-item">
-                            <span class="metric-label">Positive</span>
+                            <span class="metric-label">😊 Positive</span>
                             <span class="metric-value">${analytics.sentiment.distribution.positive || 0}%</span>
                         </div>
                         <div class="metric-item">
-                            <span class="metric-label">Neutral</span>
+                            <span class="metric-label">😐 Neutral</span>
                             <span class="metric-value">${analytics.sentiment.distribution.neutral || 0}%</span>
                         </div>
                         <div class="metric-item">
-                            <span class="metric-label">Negative</span>
+                            <span class="metric-label">😟 Negative</span>
                             <span class="metric-value">${analytics.sentiment.distribution.negative || 0}%</span>
                         </div>
                     </div>
@@ -690,11 +988,11 @@
                     <div class="card-header"><h2>🧠 Question Types</h2></div>
                     <div class="card-content">
                         <div class="metric-item">
-                            <span class="metric-label">Open-ended</span>
+                            <span class="metric-label">💡 Open-ended</span>
                             <span class="metric-value">${analytics.curiosity.question_types.open_ended || 0}%</span>
                         </div>
                         <div class="metric-item">
-                            <span class="metric-label">Factual</span>
+                            <span class="metric-label">📖 Factual</span>
                             <span class="metric-value">${analytics.curiosity.question_types.factual || 0}%</span>
                         </div>
                         <div class="progress-bar-container">
@@ -711,8 +1009,8 @@
                                 ${analytics.progression.slice(-10).map(day => `
                                     <div style="margin-bottom: 0.75rem;">
                                         <div style="display: flex; justify-content: space-between; font-size: 0.875rem; margin-bottom: 0.25rem;">
-                                            <span>${formatDate(day.date)}</span>
-                                            <span>${Math.round(day.avg_length)} chars avg</span>
+                                            <span style="font-weight: 600;">${formatDate(day.date)}</span>
+                                            <span class="badge badge-info">${Math.round(day.avg_length)} chars avg</span>
                                         </div>
                                         <div class="progress-bar-container">
                                             <div class="progress-bar-fill" style="width: ${Math.min((day.avg_length / 500) * 100, 100)}%"></div>
@@ -720,7 +1018,7 @@
                                     </div>
                                 `).join('')}
                             </div>` :
-                            '<p style="color: #64748b;">No progression data available</p>'
+                            '<div class="empty-state"><div class="empty-state-icon">📊</div><p>No progression data available</p></div>'
                         }
                     </div>
                 </div>
@@ -729,15 +1027,15 @@
                     <div class="card-header"><h2>⚡ Response Times</h2></div>
                     <div class="card-content">
                         <div class="metric-item">
-                            <span class="metric-label">Average</span>
+                            <span class="metric-label">⏱️ Average</span>
                             <span class="metric-value">${analytics.response_times.avg_ms}ms</span>
                         </div>
                         <div class="metric-item">
-                            <span class="metric-label">Fastest</span>
+                            <span class="metric-label">🚀 Fastest</span>
                             <span class="metric-value">${analytics.response_times.min_ms}ms</span>
                         </div>
                         <div class="metric-item">
-                            <span class="metric-label">Slowest</span>
+                            <span class="metric-label">🐌 Slowest</span>
                             <span class="metric-value">${analytics.response_times.max_ms}ms</span>
                         </div>
                     </div>
@@ -747,12 +1045,12 @@
                     <div class="card-header"><h2>📅 Activity Timeline</h2></div>
                     <div class="card-content">
                         <div class="metric-item">
-                            <span class="metric-label">First Message</span>
-                            <span class="metric-value">${formatDate(activity.first_message)}</span>
+                            <span class="metric-label">🎯 First Message</span>
+                            <span class="metric-value" style="font-size: 1rem;">${formatDate(activity.first_message)}</span>
                         </div>
                         <div class="metric-item">
-                            <span class="metric-label">Last Message</span>
-                            <span class="metric-value">${formatDate(activity.last_message)}</span>
+                            <span class="metric-label">⏰ Last Message</span>
+                            <span class="metric-value" style="font-size: 1rem;">${formatDate(activity.last_message)}</span>
                         </div>
                     </div>
                 </div>
@@ -763,7 +1061,7 @@
             const container = document.getElementById('studentConversations');
             
             if (conversations.length === 0) {
-                container.innerHTML = '<p style="color: #64748b;">No conversations found</p>';
+                container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">💬</div><p>No conversations found</p></div>';
                 return;
             }
             
@@ -771,7 +1069,7 @@
                 <div class="conversation-item">
                     <div class="role">${conv.role === 'student' ? '👤 Student' : '🤖 AI Tutor'}</div>
                     <div class="message">${conv.message}</div>
-                    <div class="timestamp">${formatDate(conv.created_at)}</div>
+                    <div class="timestamp">🕒 ${formatDate(conv.created_at)}</div>
                 </div>
             `).join('');
         }
@@ -780,13 +1078,30 @@
             currentStudentId = null;
             document.getElementById('studentDetails').style.display = 'none';
             document.getElementById('studentSearch').value = '';
-            document.getElementById('searchResults').innerHTML = '';
+            if (allStudentsCache) {
+                displaySearchResults(allStudentsCache);
+            } else {
+                document.getElementById('searchResults').innerHTML = '';
+            }
         }
         
         function formatDate(dateString) {
             if (!dateString) return 'Unknown';
             const date = new Date(dateString);
-            return date.toLocaleString();
+            const now = new Date();
+            const diff = now - date;
+            const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+            
+            if (days === 0) return 'Today';
+            if (days === 1) return 'Yesterday';
+            if (days < 7) return `${days} days ago`;
+            if (days < 30) return `${Math.floor(days / 7)} weeks ago`;
+            
+            return date.toLocaleDateString('en-US', { 
+                year: 'numeric', 
+                month: 'short', 
+                day: 'numeric' 
+            });
         }
         
         document.addEventListener('DOMContentLoaded', initializeDashboard);
