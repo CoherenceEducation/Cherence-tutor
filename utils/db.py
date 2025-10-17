@@ -1,7 +1,7 @@
 import os
 import mysql.connector
 from mysql.connector import Error
-from datetime import datetime
+from datetime import datetime, date
 
 def get_db_connection():
     """Create database connection with error handling"""
@@ -726,7 +726,7 @@ def get_engagement_metrics(cursor, since_days: int = 0):
                 """
             )
             result = cursor.fetchone()
-            avg_messages_per_session = result['avg_messages_per_session'] if result and result['avg_messages_per_session'] else 0
+            avg_messages_per_session = float(result['avg_messages_per_session']) if result and result['avg_messages_per_session'] is not None else 0.0
 
             cursor.execute(
                 f"""
@@ -742,7 +742,7 @@ def get_engagement_metrics(cursor, since_days: int = 0):
                 """
             )
             result = cursor.fetchone()
-            avg_session_duration = result['avg_session_duration'] if result and result['avg_session_duration'] else 0
+            avg_session_duration = float(result['avg_session_duration']) if result and result['avg_session_duration'] is not None else 0.0
         else:
             # Fallback sessions approximation: per-student per-day conversations
             cursor.execute(
@@ -801,10 +801,10 @@ def get_engagement_metrics(cursor, since_days: int = 0):
         unique_active_students = result['unique_active_students'] if result else 0
         
         return {
-            'total_chats': total_chats,
-            'avg_messages_per_session': round(avg_messages_per_session, 1),
-            'avg_session_duration_minutes': round(avg_session_duration, 1),
-            'unique_active_students_7d': unique_active_students
+            'total_chats': int(total_chats),
+            'avg_messages_per_session': round(float(avg_messages_per_session), 1),
+            'avg_session_duration_minutes': round(float(avg_session_duration), 1),
+            'unique_active_students_7d': int(unique_active_students)
         }
     except Error as e:
         print(f"Error fetching engagement metrics: {e}")
@@ -875,6 +875,17 @@ def get_topic_analysis(cursor, since_days: int = 0):
             'total_topics_identified': 0
         }
 
+
+def to_date_key(val):
+    try:
+        if isinstance(val, datetime):
+            return val.date().isoformat()
+        if isinstance(val, date):
+            return val.isoformat()
+        return str(val)[:10]  # fallback
+    except Exception:
+        return ''
+
 def get_sentiment_analysis(cursor, since_days: int = 0):
     """Analyze sentiment trends in student messages"""
     try:
@@ -898,7 +909,8 @@ def get_sentiment_analysis(cursor, since_days: int = 0):
         
         for message in messages:
             message_text = message['message'].lower()
-            date_key = message['created_at'].date().isoformat()
+            date_key = to_date_key(message['created_at'])
+
             
             positive_score = sum(1 for word in positive_keywords if word in message_text)
             negative_score = sum(1 for word in negative_keywords if word in message_text)
@@ -938,10 +950,8 @@ def get_sentiment_analysis(cursor, since_days: int = 0):
         }
 
 def get_progress_indicators(cursor, since_days: int = 0):
-    """Track progress indicators like question depth and sentiment positivity over time"""
     try:
         interval = _interval_clause(since_days)
-        # Question depth analysis (based on message length and complexity)
         cursor.execute(
             f"""
             SELECT 
@@ -956,37 +966,42 @@ def get_progress_indicators(cursor, since_days: int = 0):
             """
         )
         progress_data = cursor.fetchall()
-        
-        # Calculate growth trends
+
         student_progress = {}
         for row in progress_data:
             student_id = row['student_id']
             if student_id not in student_progress:
                 student_progress[student_id] = []
-            # Ensure date is serialized as ISO string for JSON
+            # ensure ISO date
             date_iso = row['date'].isoformat() if hasattr(row['date'], 'isoformat') else str(row['date'])
+            # 🔽 cast Decimals to float
+            avg_len = float(row.get('avg_message_length') or 0)
+            day_msgs = int(row.get('daily_messages') or 0)
             student_progress[student_id].append({
                 'date': date_iso,
-                'avg_length': row['avg_message_length'],
-                'message_count': row['daily_messages']
+                'avg_length': avg_len,
+                'message_count': day_msgs
             })
-        
-        # Identify students with positive growth
+
+        # Compute growth using floats
         growing_students = 0
         for student_id, data in student_progress.items():
-            if len(data) >= 3:  # Need at least 3 data points
-                recent_avg = sum(d['avg_length'] for d in data[-3:]) / 3
-                early_avg = sum(d['avg_length'] for d in data[:3]) / 3
-                if recent_avg > early_avg * 1.1:  # 10% growth
+            if len(data) >= 3:
+                recent_avg = sum(float(d['avg_length']) for d in data[-3:]) / 3.0
+                early_avg  = sum(float(d['avg_length']) for d in data[:3])  / 3.0
+                if early_avg > 0 and recent_avg > early_avg * 1.1:
                     growing_students += 1
-        
+
+        total = len(student_progress)
+        growth_pct = round(100.0 * growing_students / float(total), 1) if total else 0.0
+
         return {
             'students_with_growth': growing_students,
-            'total_tracked_students': len(student_progress),
-            'growth_percentage': round((growing_students / len(student_progress) * 100), 1) if student_progress else 0,
+            'total_tracked_students': total,
+            'growth_percentage': growth_pct,
             'series_by_student': student_progress
         }
-    except Error as e:
+    except Exception as e:
         print(f"Error fetching progress indicators: {e}")
         return {
             'students_with_growth': 0,
