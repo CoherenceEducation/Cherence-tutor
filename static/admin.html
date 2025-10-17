@@ -73,7 +73,7 @@
         }
         
         .stat-card .number {
-            font-size: 2.5rem;
+            font-size: 2rem;
             font-weight: 700;
             color: #023047;
             margin-bottom: 0.5rem;
@@ -100,16 +100,28 @@
         }
         
         .card-header {
-            padding: 1.5rem;
-            border-bottom: 1px solid #e2e8f0;
-            background: #f8fafc;
+            padding: 1.25rem 1.5rem;
+            border-bottom: 1px solid #e5e7eb;
+            background: linear-gradient(180deg,#f8fafc 0%, #f1f5f9 100%);
         }
-        
         .card-header h2 {
-            font-size: 1.25rem;
-            font-weight: 600;
-            color: #023047;
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #0f172a;
         }
+        .table th,
+        .table td {
+            padding: 0.6rem 0.75rem;
+            border-bottom: 1px solid #eef2f7;
+        }
+        .badge-success { background: #e8fff3; color: #065f46; }
+        .badge-warning { background: #fff7ed; color: #9a3412; }
+        .badge-danger  { background: #fef2f2; color: #b91c1c; }
+        .stat-card .number { font-size: 2rem; }
+        .analytics-header h3 { font-weight: 700; }
+        .topic-item { border: 1px solid #eef2f7; background: #fff; }
+        .metric-label { color: #334155; }
+        .metric-value { color: #0f172a; }
         
         .card-content {
             padding: 1.5rem;
@@ -118,13 +130,6 @@
         .table {
             width: 100%;
             border-collapse: collapse;
-        }
-        
-        .table th,
-        .table td {
-            padding: 0.75rem;
-            text-align: left;
-            border-bottom: 1px solid #e2e8f0;
         }
         
         .table th {
@@ -569,15 +574,6 @@
                 <div class="card-content">
                     <div class="loading" id="analyticsLoading">Loading analytics...</div>
                     <div id="analyticsContent"></div>
-                    <div style="margin-top: 12px; display:flex; align-items:center; gap:8px;">
-                        <label for="rangeSelect" style="font-size: 0.875rem; color:#64748b;">Time range:</label>
-                        <select id="rangeSelect" class="search-box" style="max-width: 180px; margin:0;">
-                            <option value="7">Last 7 days</option>
-                            <option value="30" selected>Last 30 days</option>
-                            <option value="90">Last 90 days</option>
-                        </select>
-                        <button class="btn btn-secondary" id="reloadRangeBtn">Reload</button>
-                    </div>
                 </div>
             </div>
         </div>
@@ -852,8 +848,7 @@
         // Load comprehensive analytics
         async function loadComprehensiveAnalytics() {
             try {
-                const days = document.getElementById('rangeSelect')?.value || 30;
-                const response = await fetch(`${API_URL}/api/admin/comprehensive-analytics?days=${days}`, {
+                const response = await fetch(`${API_URL}/api/admin/comprehensive-analytics`, {
                     headers: {
                         'Authorization': `Bearer ${authToken}`
                     }
@@ -877,7 +872,6 @@
                 
             } catch (error) {
                 console.error('Error loading comprehensive analytics:', error);
-                // Show empty data instead of loading indicators
                 displayComprehensiveAnalytics({
                     engagement: {},
                     topics: {},

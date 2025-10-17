@@ -679,9 +679,10 @@ def get_comprehensive_analytics(since_days: int = 30):
         cursor.close()
         conn.close()
 
-def get_engagement_metrics(cursor, since_days: int = 30):
+def get_engagement_metrics(cursor, since_days: int = 0):
     """Get engagement metrics: chats, avg messages/session, duration"""
     try:
+        interval = _interval_clause(since_days)
         # First, check whether we have any non-null session_id rows
         cursor.execute(
             f"""
@@ -689,8 +690,7 @@ def get_engagement_metrics(cursor, since_days: int = 30):
             FROM (
                 SELECT session_id
                 FROM conversation_history
-                WHERE session_id IS NOT NULL
-                  AND created_at >= DATE_SUB(CURDATE(), INTERVAL {since_days} DAY)
+                WHERE session_id IS NOT NULL{interval}
                 GROUP BY session_id
             ) t
             """
@@ -706,8 +706,7 @@ def get_engagement_metrics(cursor, since_days: int = 30):
                 FROM (
                     SELECT session_id
                     FROM conversation_history 
-                    WHERE session_id IS NOT NULL
-                      AND created_at >= DATE_SUB(CURDATE(), INTERVAL {since_days} DAY)
+                    WHERE session_id IS NOT NULL{interval}
                     GROUP BY session_id
                 ) s
                 """
@@ -721,8 +720,7 @@ def get_engagement_metrics(cursor, since_days: int = 30):
                 FROM (
                     SELECT session_id, COUNT(*) as session_messages
                     FROM conversation_history 
-                    WHERE session_id IS NOT NULL
-                      AND created_at >= DATE_SUB(CURDATE(), INTERVAL {since_days} DAY)
+                    WHERE session_id IS NOT NULL{interval}
                     GROUP BY session_id
                 ) as session_counts
                 """
@@ -737,8 +735,7 @@ def get_engagement_metrics(cursor, since_days: int = 30):
                     SELECT session_id, 
                            TIMESTAMPDIFF(MINUTE, MIN(created_at), MAX(created_at)) as session_duration_minutes
                     FROM conversation_history 
-                    WHERE session_id IS NOT NULL
-                      AND created_at >= DATE_SUB(CURDATE(), INTERVAL {since_days} DAY)
+                    WHERE session_id IS NOT NULL{interval}
                     GROUP BY session_id
                     HAVING COUNT(*) > 1
                 ) as session_durations
@@ -754,7 +751,7 @@ def get_engagement_metrics(cursor, since_days: int = 30):
                 FROM (
                     SELECT student_id, DATE(created_at) AS day_key
                     FROM conversation_history
-                    WHERE created_at >= DATE_SUB(CURDATE(), INTERVAL {since_days} DAY)
+                    WHERE 1=1{interval}
                     GROUP BY student_id, DATE(created_at)
                 ) d
                 """
@@ -768,7 +765,7 @@ def get_engagement_metrics(cursor, since_days: int = 30):
                 FROM (
                     SELECT student_id, DATE(created_at) AS day_key, COUNT(*) AS day_messages
                     FROM conversation_history
-                    WHERE created_at >= DATE_SUB(CURDATE(), INTERVAL {since_days} DAY)
+                    WHERE 1=1{interval}
                     GROUP BY student_id, DATE(created_at)
                 ) day_counts
                 """
@@ -783,7 +780,7 @@ def get_engagement_metrics(cursor, since_days: int = 30):
                     SELECT student_id, DATE(created_at) AS day_key,
                            TIMESTAMPDIFF(MINUTE, MIN(created_at), MAX(created_at)) AS day_duration_minutes
                     FROM conversation_history
-                    WHERE created_at >= DATE_SUB(CURDATE(), INTERVAL {since_days} DAY)
+                    WHERE 1=1{interval}
                     GROUP BY student_id, DATE(created_at)
                     HAVING COUNT(*) > 1
                 ) day_durations
@@ -792,7 +789,7 @@ def get_engagement_metrics(cursor, since_days: int = 30):
             result = cursor.fetchone()
             avg_session_duration = result['avg_session_duration'] if result and result['avg_session_duration'] else 0
         
-        # Unique students with activity (always last 7 days for this stat)
+        # Unique students with activity (7d fixed)
         cursor.execute(
             """
             SELECT COUNT(DISTINCT student_id) as unique_active_students
@@ -818,16 +815,15 @@ def get_engagement_metrics(cursor, since_days: int = 30):
             'unique_active_students_7d': 0
         }
 
-def get_topic_analysis(cursor, since_days: int = 30):
+def get_topic_analysis(cursor, since_days: int = 0):
     """Analyze topics and subjects most commonly asked by students"""
     try:
-        # Get all student messages for topic analysis
+        interval = _interval_clause(since_days)
         cursor.execute(
             f"""
             SELECT message, student_id, created_at
             FROM conversation_history 
-            WHERE role = 'student' 
-              AND created_at >= DATE_SUB(CURDATE(), INTERVAL {since_days} DAY)
+            WHERE role = 'student'{interval}
             ORDER BY created_at DESC
             """
         )
@@ -879,9 +875,10 @@ def get_topic_analysis(cursor, since_days: int = 30):
             'total_topics_identified': 0
         }
 
-def get_sentiment_analysis(cursor, since_days: int = 30):
+def get_sentiment_analysis(cursor, since_days: int = 0):
     """Analyze sentiment trends in student messages"""
     try:
+        interval = _interval_clause(since_days)
         # Simple sentiment analysis based on keywords
         positive_keywords = ['good', 'great', 'awesome', 'amazing', 'love', 'like', 'excited', 'happy', 'wonderful', 'fantastic', 'excellent', 'perfect', 'thank', 'helpful', 'understand', 'clear', 'easy']
         negative_keywords = ['bad', 'terrible', 'awful', 'hate', 'difficult', 'confused', 'frustrated', 'angry', 'sad', 'worried', 'stressed', 'hard', 'complicated', "don't understand", 'stuck']
@@ -890,8 +887,7 @@ def get_sentiment_analysis(cursor, since_days: int = 30):
             f"""
             SELECT message, created_at, student_id
             FROM conversation_history 
-            WHERE role = 'student' 
-              AND created_at >= DATE_SUB(CURDATE(), INTERVAL {since_days} DAY)
+            WHERE role = 'student'{interval}
             ORDER BY created_at DESC
             """
         )
@@ -902,7 +898,7 @@ def get_sentiment_analysis(cursor, since_days: int = 30):
         
         for message in messages:
             message_text = message['message'].lower()
-            date = message['created_at'].date()
+            date_key = message['created_at'].date().isoformat()
             
             positive_score = sum(1 for word in positive_keywords if word in message_text)
             negative_score = sum(1 for word in negative_keywords if word in message_text)
@@ -916,9 +912,9 @@ def get_sentiment_analysis(cursor, since_days: int = 30):
             
             sentiment_counts[sentiment] += 1
             
-            if date not in daily_sentiment:
-                daily_sentiment[date] = {'positive': 0, 'negative': 0, 'neutral': 0}
-            daily_sentiment[date][sentiment] += 1
+            if date_key not in daily_sentiment:
+                daily_sentiment[date_key] = {'positive': 0, 'negative': 0, 'neutral': 0}
+            daily_sentiment[date_key][sentiment] += 1
         
         # Calculate percentages
         total_messages = sum(sentiment_counts.values())
@@ -941,9 +937,10 @@ def get_sentiment_analysis(cursor, since_days: int = 30):
             'daily_trends': {}
         }
 
-def get_progress_indicators(cursor, since_days: int = 30):
+def get_progress_indicators(cursor, since_days: int = 0):
     """Track progress indicators like question depth and sentiment positivity over time"""
     try:
+        interval = _interval_clause(since_days)
         # Question depth analysis (based on message length and complexity)
         cursor.execute(
             f"""
@@ -953,8 +950,7 @@ def get_progress_indicators(cursor, since_days: int = 30):
                 AVG(LENGTH(message)) as avg_message_length,
                 COUNT(*) as daily_messages
             FROM conversation_history 
-            WHERE role = 'student' 
-              AND created_at >= DATE_SUB(CURDATE(), INTERVAL {since_days} DAY)
+            WHERE role = 'student'{interval}
             GROUP BY student_id, DATE(created_at)
             ORDER BY student_id, date
             """
@@ -967,8 +963,10 @@ def get_progress_indicators(cursor, since_days: int = 30):
             student_id = row['student_id']
             if student_id not in student_progress:
                 student_progress[student_id] = []
+            # Ensure date is serialized as ISO string for JSON
+            date_iso = row['date'].isoformat() if hasattr(row['date'], 'isoformat') else str(row['date'])
             student_progress[student_id].append({
-                'date': row['date'],
+                'date': date_iso,
                 'avg_length': row['avg_message_length'],
                 'message_count': row['daily_messages']
             })
@@ -985,19 +983,22 @@ def get_progress_indicators(cursor, since_days: int = 30):
         return {
             'students_with_growth': growing_students,
             'total_tracked_students': len(student_progress),
-            'growth_percentage': round((growing_students / len(student_progress) * 100), 1) if student_progress else 0
+            'growth_percentage': round((growing_students / len(student_progress) * 100), 1) if student_progress else 0,
+            'series_by_student': student_progress
         }
     except Error as e:
         print(f"Error fetching progress indicators: {e}")
         return {
             'students_with_growth': 0,
             'total_tracked_students': 0,
-            'growth_percentage': 0
+            'growth_percentage': 0,
+            'series_by_student': {}
         }
 
-def get_academic_focus(cursor, since_days: int = 30):
+def get_academic_focus(cursor, since_days: int = 0):
     """Get top 5 subjects/topics asked about"""
     try:
+        interval = _interval_clause(since_days)
         # Enhanced academic subject detection
         academic_subjects = {
             'Mathematics': ['math', 'algebra', 'geometry', 'calculus', 'trigonometry', 'statistics', 'equation', 'solve', 'problem', 'number', 'formula', 'theorem', 'proof'],
@@ -1014,8 +1015,7 @@ def get_academic_focus(cursor, since_days: int = 30):
             f"""
             SELECT message, student_id
             FROM conversation_history 
-            WHERE role = 'student' 
-              AND created_at >= DATE_SUB(CURDATE(), INTERVAL {since_days} DAY)
+            WHERE role = 'student'{interval}
             """
         )
         messages = cursor.fetchall()
@@ -1054,9 +1054,10 @@ def get_academic_focus(cursor, since_days: int = 30):
             'total_subjects_identified': 0
         }
 
-def get_curiosity_metrics(cursor, since_days: int = 30):
+def get_curiosity_metrics(cursor, since_days: int = 0):
     """Analyze curiosity and creativity: % open-ended vs factual questions"""
     try:
+        interval = _interval_clause(since_days)
         # Define patterns for different question types
         open_ended_patterns = ['why', 'how', 'what if', 'explain', 'describe', 'compare', 'analyze', 'evaluate', 'create', 'design', 'imagine', 'think about']
         factual_patterns = ['what is', 'when', 'where', 'who', 'define', 'list', 'name', 'identify', 'calculate', 'solve', 'find']
@@ -1066,8 +1067,7 @@ def get_curiosity_metrics(cursor, since_days: int = 30):
             f"""
             SELECT message
             FROM conversation_history 
-            WHERE role = 'student' 
-              AND created_at >= DATE_SUB(CURDATE(), INTERVAL {since_days} DAY)
+            WHERE role = 'student'{interval}
             """
         )
         questions = cursor.fetchall()
@@ -1103,3 +1103,10 @@ def get_curiosity_metrics(cursor, since_days: int = 30):
             'open_ended_count': 0,
             'factual_count': 0
         }
+
+def _interval_clause(since_days: int) -> str:
+    try:
+        days = int(since_days)
+    except Exception:
+        days = 0
+    return "" if days <= 0 else f" AND created_at >= DATE_SUB(CURDATE(), INTERVAL {days} DAY)"
