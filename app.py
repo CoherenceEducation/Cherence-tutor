@@ -425,7 +425,11 @@ def admin_analytics():
 @require_admin
 def admin_comprehensive_analytics():
     """Admin: Get comprehensive analytics including engagement, topics, sentiment, and progress"""
-    analytics = get_comprehensive_analytics()
+    try:
+        days = int(request.args.get('days', 30))
+    except Exception:
+        days = 30
+    analytics = get_comprehensive_analytics(days)
     return jsonify(analytics), 200
 
 @app.route('/chat', methods=['GET'])
