@@ -426,9 +426,9 @@ def admin_analytics():
 def admin_comprehensive_analytics():
     """Admin: Get comprehensive analytics including engagement, topics, sentiment, and progress"""
     try:
-        days = int(request.args.get('days', 36500))
+        days = int(request.args.get('days', 30))
     except Exception:
-        days = 36500
+        days = 30
     analytics = get_comprehensive_analytics(days)
     return jsonify(analytics), 200
 
