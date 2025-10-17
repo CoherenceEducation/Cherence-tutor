@@ -43,6 +43,7 @@ CORS(app, origins=allowed_origins or [
     "https://classes.coherenceeducation.org",
     "https://coherenceeducation.learnworlds.com",
     "https://df3e8ea9dd4c.ngrok-free.app",
+    "https://*.vercel.app",
     "https://cherence-tutor.vercel.app"
 ], supports_credentials=True)
 
@@ -426,7 +427,6 @@ def admin_analytics():
 @app.route('/api/admin/comprehensive-analytics', methods=['GET'])
 @require_admin
 def admin_comprehensive_analytics():
-    """Admin: Get comprehensive analytics including engagement, topics, sentiment, and progress"""
     try:
         days_raw = request.args.get('days')
         try:
@@ -435,10 +435,17 @@ def admin_comprehensive_analytics():
                 days = 0
         except Exception:
             days = 0
-    except Exception:
-        days = 0
-    analytics = get_comprehensive_analytics(days)
-    return jsonify(analytics), 200
+
+        print(f"📊 Fetching comprehensive analytics for last {days} days...")
+        analytics = get_comprehensive_analytics(days)
+        print("✅ Comprehensive analytics generated successfully")
+        return jsonify(analytics), 200
+
+    except Exception as e:
+        import traceback
+        print("💥 Error in comprehensive analytics:", e)
+        traceback.print_exc()
+        return jsonify({"error": str(e)}), 500
 
 
 @app.route('/chat', methods=['GET'])
