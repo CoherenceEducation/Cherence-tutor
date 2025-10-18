@@ -47,8 +47,8 @@ CORS(app, origins=allowed_origins or [
     "https://coherenceeducation.learnworlds.com",
     "https://df3e8ea9dd4c.ngrok-free.app",
     "https://*.vercel.app",
-    "https://cherence-tutor.vercel.app"
-], supports_credentials=True, allow_headers=['Content-Type', 'Authorization'],
+    "https://cherence-tutor.vercel.app"], 
+    supports_credentials=True, allow_headers=['Content-Type', 'Authorization'],
      methods=['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
      max_age=3600  # Cache preflight for 1 hour
      )
