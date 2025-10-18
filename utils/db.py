@@ -1364,3 +1364,233 @@ def search_students(query):
     finally:
         cursor.close()
         conn.close()
+
+
+# Add these functions to your utils/db.py file
+
+def get_user_sessions(student_id, limit=50):
+    """Get all chat sessions for a student with preview"""
+    conn = get_db_connection()
+    if not conn:
+        return []
+    
+    cursor = conn.cursor(dictionary=True)
+    try:
+        # Get sessions with first message as title preview
+        cursor.execute("""
+            SELECT 
+                ch1.session_id,
+                ch1.created_at as session_start,
+                MAX(ch1.created_at) as last_message_at,
+                COUNT(*) as message_count,
+                (
+                    SELECT message 
+                    FROM conversation_history ch2 
+                    WHERE ch2.session_id = ch1.session_id 
+                    AND ch2.role = 'student'
+                    ORDER BY ch2.created_at ASC 
+                    LIMIT 1
+                ) as first_message
+            FROM conversation_history ch1
+            WHERE ch1.student_id = %s
+            AND ch1.session_id IS NOT NULL
+            GROUP BY ch1.session_id
+            ORDER BY last_message_at DESC
+            LIMIT %s
+        """, (student_id, limit))
+        
+        sessions = cursor.fetchall()
+        
+        # Generate titles from first message
+        for session in sessions:
+            if session['first_message']:
+                # Truncate to first 50 chars
+                title = session['first_message'][:50]
+                if len(session['first_message']) > 50:
+                    title += '...'
+                session['title'] = title
+            else:
+                session['title'] = 'New Conversation'
+            
+            # Remove first_message from response
+            del session['first_message']
+        
+        return sessions
+    except Error as e:
+        print(f"Error fetching user sessions: {e}")
+        return []
+    finally:
+        cursor.close()
+        conn.close()
+
+
+def get_session_messages(student_id, session_id, limit=100):
+    """Get all messages for a specific session"""
+    conn = get_db_connection()
+    if not conn:
+        return []
+    
+    cursor = conn.cursor(dictionary=True)
+    try:
+        cursor.execute("""
+            SELECT role, message, created_at, response_time_ms
+            FROM conversation_history
+            WHERE student_id = %s 
+            AND session_id = %s
+            ORDER BY created_at ASC
+            LIMIT %s
+        """, (student_id, session_id, limit))
+        
+        return cursor.fetchall()
+    except Error as e:
+        print(f"Error fetching session messages: {e}")
+        return []
+    finally:
+        cursor.close()
+        conn.close()
+
+
+def delete_user_session(student_id, session_id):
+    """Delete a chat session and all its messages"""
+    conn = get_db_connection()
+    if not conn:
+        return False
+    
+    cursor = conn.cursor()
+    try:
+        # First verify ownership
+        cursor.execute("""
+            SELECT COUNT(*) as count
+            FROM conversation_history
+            WHERE student_id = %s AND session_id = %s
+        """, (student_id, session_id))
+        
+        result = cursor.fetchone()
+        if not result or result[0] == 0:
+            return False
+        
+        # Delete all messages in this session
+        cursor.execute("""
+            DELETE FROM conversation_history
+            WHERE student_id = %s AND session_id = %s
+        """, (student_id, session_id))
+        
+        conn.commit()
+        print(f"✅ Deleted session {session_id} for student {student_id}")
+        return True
+    except Error as e:
+        print(f"Error deleting session: {e}")
+        conn.rollback()
+        return False
+    finally:
+        cursor.close()
+        conn.close()
+
+
+def update_session_title(student_id, session_id, new_title):
+    """Update the title of a session (stored in first message metadata)"""
+    conn = get_db_connection()
+    if not conn:
+        return False
+    
+    cursor = conn.cursor()
+    try:
+        # Verify ownership first
+        cursor.execute("""
+            SELECT COUNT(*) as count
+            FROM conversation_history
+            WHERE student_id = %s AND session_id = %s
+        """, (student_id, session_id))
+        
+        result = cursor.fetchone()
+        if not result or result[0] == 0:
+            return False
+        
+        # For now, we'll store titles in a separate table
+        # You can also modify the conversation_history table to add a title column
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS session_metadata (
+                session_id VARCHAR(255) PRIMARY KEY,
+                student_id VARCHAR(255) NOT NULL,
+                title VARCHAR(500),
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                INDEX idx_student (student_id)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+        """)
+        
+        cursor.execute("""
+            INSERT INTO session_metadata (session_id, student_id, title)
+            VALUES (%s, %s, %s)
+            ON DUPLICATE KEY UPDATE title = %s, updated_at = CURRENT_TIMESTAMP
+        """, (session_id, student_id, new_title, new_title))
+        
+        conn.commit()
+        return True
+    except Error as e:
+        print(f"Error updating session title: {e}")
+        conn.rollback()
+        return False
+    finally:
+        cursor.close()
+        conn.close()
+
+
+def get_session_stats(student_id, session_id):
+    """Get statistics for a specific session"""
+    conn = get_db_connection()
+    if not conn:
+        return {}
+    
+    cursor = conn.cursor(dictionary=True)
+    try:
+        cursor.execute("""
+            SELECT 
+                COUNT(*) as total_messages,
+                SUM(CASE WHEN role = 'student' THEN 1 ELSE 0 END) as student_messages,
+                SUM(CASE WHEN role = 'tutor' THEN 1 ELSE 0 END) as tutor_messages,
+                MIN(created_at) as session_start,
+                MAX(created_at) as session_end,
+                AVG(response_time_ms) as avg_response_time,
+                SUM(tokens_est) as total_tokens
+            FROM conversation_history
+            WHERE student_id = %s AND session_id = %s
+        """, (student_id, session_id))
+        
+        return cursor.fetchone() or {}
+    except Error as e:
+        print(f"Error fetching session stats: {e}")
+        return {}
+    finally:
+        cursor.close()
+        conn.close()
+
+
+def create_session_metadata_table():
+    """Create session metadata table if it doesn't exist"""
+    conn = get_db_connection()
+    if not conn:
+        return False
+    
+    cursor = conn.cursor()
+    try:
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS session_metadata (
+                session_id VARCHAR(255) PRIMARY KEY,
+                student_id VARCHAR(255) NOT NULL,
+                title VARCHAR(500),
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                INDEX idx_student (student_id),
+                FOREIGN KEY (student_id) REFERENCES students(student_id) ON DELETE CASCADE
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+        """)
+        conn.commit()
+        print("✅ Session metadata table created/verified")
+        return True
+    except Error as e:
+        print(f"Error creating session_metadata table: {e}")
+        return False
+    finally:
+        cursor.close()
+        conn.close()

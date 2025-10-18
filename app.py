@@ -543,6 +543,89 @@ def admin_search_students():
         "count": len(students)
     }), 200
 
+# Add these new endpoints to your app.py file
+
+@app.route('/api/sessions', methods=['GET'])
+@require_auth
+def get_sessions():
+    """Get all chat sessions for the authenticated user"""
+    try:
+        student_id = request.user_id
+        limit = int(request.args.get('limit', 50))
+        
+        sessions = get_user_sessions(student_id, limit)
+        return jsonify({
+            "sessions": sessions,
+            "count": len(sessions)
+        }), 200
+    except Exception as e:
+        print(f"Error fetching sessions: {e}")
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route('/api/sessions/<session_id>', methods=['DELETE'])
+@require_auth
+def delete_session(session_id):
+    """Delete a specific chat session"""
+    try:
+        student_id = request.user_id
+        
+        # Verify ownership
+        success = delete_user_session(student_id, session_id)
+        
+        if success:
+            return jsonify({"message": "Session deleted successfully"}), 200
+        else:
+            return jsonify({"error": "Session not found or unauthorized"}), 404
+    except Exception as e:
+        print(f"Error deleting session: {e}")
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route('/api/history', methods=['GET'])
+@require_auth
+def get_history():
+    """Get conversation history (with optional session filter)"""
+    try:
+        student_id = request.user_id
+        session_id = request.args.get('session_id')
+        limit = int(request.args.get('limit', 50))
+        
+        if session_id:
+            # Get history for specific session
+            history = get_session_messages(student_id, session_id, limit)
+        else:
+            # Get recent history across all sessions
+            history = get_conversation_history(student_id, limit=limit)
+        
+        return jsonify({"history": history}), 200
+    except Exception as e:
+        print(f"Error fetching history: {e}")
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route('/api/sessions/<session_id>/rename', methods=['PUT'])
+@require_auth
+def rename_session(session_id):
+    """Rename a chat session"""
+    try:
+        student_id = request.user_id
+        data = request.get_json()
+        new_title = data.get('title', '').strip()
+        
+        if not new_title:
+            return jsonify({"error": "Title is required"}), 400
+        
+        success = update_session_title(student_id, session_id, new_title)
+        
+        if success:
+            return jsonify({"message": "Session renamed successfully"}), 200
+        else:
+            return jsonify({"error": "Session not found or unauthorized"}), 404
+    except Exception as e:
+        print(f"Error renaming session: {e}")
+        return jsonify({"error": str(e)}), 500
+
 
 @app.route("/")
 def home():
@@ -553,6 +636,8 @@ if __name__ == "__main__":
     print("🔧 Initializing database tables...")
     create_rate_limits_table()
     create_admins_table()
+    create_session_metadata_table()  # NEW
+
     
     port = int(os.getenv("PORT", 5000))
     app.run(
