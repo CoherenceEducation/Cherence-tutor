@@ -1,248 +1,176 @@
-<!-- ===== Enhanced Coherence Chat Launcher (LW logged-in only) ===== -->
+<!-- Enhanced Full-Page Coherence AI Tutor Integration for LearnWorlds -->
 <style>
-  /* Floating launcher button */
-  .ce-chat-launcher{
-    position:fixed; right:20px; bottom:20px; z-index:9999;
-    width:70px; height:70px; border-radius:999px; border:3px solid #f7b538;
-    box-shadow:0 10px 30px rgba(2, 48, 71, 0.3);
-    background:linear-gradient(135deg, #023047 0%, #f7b538 100%); 
-    color:#fff; display:flex; align-items:center; justify-content:center;
-    cursor:pointer; transition:all .3s ease;
+  .ce-tutor-page-link {
+    position: fixed;
+    right: 20px;
+    bottom: 20px;
+    z-index: 9999;
+    width: 70px;
+    height: 70px;
+    border-radius: 50%;
+    border: 3px solid #f7b538;
+    box-shadow: 0 10px 30px rgba(2, 48, 71, 0.3);
+    background: linear-gradient(135deg, #023047 0%, #f7b538 100%);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-decoration: none;
+    font-size: 32px;
   }
-  .ce-chat-launcher:hover{ 
-    transform:translateY(-3px) scale(1.1); 
-    box-shadow:0 15px 40px rgba(2, 48, 71, 0.4); 
+  
+  .ce-tutor-page-link:hover {
+    transform: translateY(-3px) scale(1.1);
+    box-shadow: 0 15px 40px rgba(2, 48, 71, 0.4);
     border-color: #023047;
   }
-
-  /* Slide-up panel (drawer) - positioned to avoid footer */
-  .ce-chat-panel{
-    position:fixed; right:20px; bottom:100px; z-index:9999;
-    width: min(450px, 95vw); height: min(650px, 75vh);
-    border-radius:24px; overflow:hidden; background:#fff;
-    box-shadow:0 25px 70px rgba(2, 48, 71, 0.35), 0 0 0 1px rgba(247, 181, 56, 0.2);
-    transform: translateY(20px); opacity:0; pointer-events:none;
-    transition: transform .3s ease, opacity .3s ease;
-  }
-  .ce-chat-panel.open{ 
-    transform: translateY(0); 
-    opacity:1; 
-    pointer-events:auto; 
-  }
-
-  /* Header with brand color scheme */
-  .ce-chat-header{
-    height:64px; background:linear-gradient(135deg,#023047 0%, #f7b538 100%);
-    color:#fff; display:flex; align-items:center; justify-content:space-between;
-    padding:0 24px; font-weight:600; border-bottom: none;
-    border-radius: 24px 24px 0 0;
-    position: relative;
-  }
-  .ce-chat-header::after {
-    content: '';
+  
+  .ce-tutor-badge {
     position: absolute;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    height: 1px;
-    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+    top: -5px;
+    right: -5px;
+    background: #ff4444;
+    color: white;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: bold;
+    border: 2px solid white;
   }
-  .ce-chat-header h1 {
-    font-size: 18px; margin: 0; display: flex; align-items: center; gap: 12px;
-    text-shadow: 0 1px 3px rgba(0,0,0,0.2);
-  }
-  .ce-chat-close{ 
-    background:rgba(255,255,255,0.15); border:1px solid rgba(255,255,255,0.2); 
-    color:#fff; cursor:pointer; font-size:14px; padding:8px 10px; 
-    border-radius:12px; transition:all 0.2s ease; font-weight:500;
-    width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;
-  }
-  .ce-chat-close:hover { 
-    background:rgba(255,255,255,0.25); 
-    border-color:rgba(255,255,255,0.4); 
-    transform:scale(1.1); 
-  }
-
-  /* Iframe area */
-  .ce-chat-frame{ width:100%; height:calc(100% - 64px); border:0; }
-
-  /* Enhanced toast loader */
-  .ce-chat-toast{
-    position:fixed; right:90px; bottom:190px; z-index:9999; 
-    background:linear-gradient(135deg, #023047 0%, #f7b538 100%); 
-    color:#fff; padding:10px 14px; border-radius:12px; 
-    font-size:12px; opacity:0; pointer-events:none; font-weight: 600;
-    transform:translateY(8px); transition:all .3s ease;
+  
+  .ce-tutor-tooltip {
+    position: absolute;
+    right: 80px;
+    bottom: 20px;
+    background: linear-gradient(135deg, #023047 0%, #f7b538 100%);
+    color: white;
+    padding: 10px 16px;
+    border-radius: 12px;
+    font-size: 14px;
+    font-weight: 600;
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
     box-shadow: 0 4px 15px rgba(2, 48, 71, 0.3);
-    border: 1px solid rgba(255,255,255,0.2);
   }
-  .ce-chat-toast.show{ opacity:.95; transform:translateY(0); }
-
-  /* Mobile responsiveness */
+  
+  .ce-tutor-page-link:hover + .ce-tutor-tooltip {
+    opacity: 1;
+  }
+  
   @media (max-width: 768px) {
-    .ce-chat-panel {
-      width: calc(100vw - 40px);
-      height: min(75vh, 650px);
-      right: 20px;
-      left: 20px;
-      bottom: 100px;
-    }
-    .ce-chat-launcher {
-      right: 20px;
-      bottom: 20px;
-    }
-    .ce-chat-toast {
-      bottom: 100px;
+    .ce-tutor-page-link {
+      width: 60px;
+      height: 60px;
+      right: 15px;
+      bottom: 15px;
+      font-size: 28px;
     }
   }
 </style>
 
-<!-- Root containers are appended to <body> so they're above page layout/footer -->
 <script>
-(function(){
-  // ---- CONFIG ----
-  const BACKEND = "https://cherence-tutor.vercel.app/"; // Your deployed Vercel URL
-  const TITLE   = "🎓 Coherence AI Tutor";
-
+(function() {
+  // CONFIG
+  const BACKEND = "https://cherence-tutor.vercel.app";
+  
   // LW Liquid variables (render only for logged-in users)
   const LW_USER = {
     id: "{{user.id}}",
     username: "{{user.username}}",
     email: "{{user.email}}"
   };
-
+  
   // Guard: if Liquid didn't render (not logged in), quit silently
   if (!LW_USER.id || String(LW_USER.id).includes("{{")) return;
-
-  // UI elements
-  const btn  = document.createElement("button");
-  btn.className = "ce-chat-launcher";
-  btn.setAttribute("aria-label", "Open AI Tutor");
-
-  // Learning-themed graduation cap icon
-  btn.innerHTML = '<svg viewBox="0 0 24 24" width="32" height="32" fill="currentColor" aria-hidden="true"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>';
-
-  const panel = document.createElement("div");
-  panel.className = "ce-chat-panel";
-  panel.innerHTML = `
-    <div class="ce-chat-header">
-      <h1>${TITLE}</h1>
-      <button class="ce-chat-close" title="Close">✕</button>
-    </div>
-    <iframe class="ce-chat-frame" title="${TITLE}" allow="clipboard-read; clipboard-write"></iframe>
-  `;
-
-  const toast = document.createElement("div");
-  toast.className = "ce-chat-toast";
-  toast.textContent = "Connecting to AI Tutor…";
-
-  document.body.appendChild(btn);
-  document.body.appendChild(panel);
-  document.body.appendChild(toast);
-
-  const iframe = panel.querySelector(".ce-chat-frame");
-  const close  = panel.querySelector(".ce-chat-close");
-
-  // Enhanced token caching with better error handling
+  
+  // Create floating button
+  const button = document.createElement("a");
+  button.className = "ce-tutor-page-link";
+  button.innerHTML = '🎓';
+  button.setAttribute("aria-label", "Open AI Tutor");
+  button.setAttribute("target", "_blank");
+  
+  // Create tooltip
+  const tooltip = document.createElement("div");
+  tooltip.className = "ce-tutor-tooltip";
+  tooltip.textContent = "Open AI Tutor";
+  
+  document.body.appendChild(button);
+  document.body.appendChild(tooltip);
+  
+  // Token management
   const cacheKey = `ce.jwt.${LW_USER.id}`;
-  function getCachedToken(){
-    try{
+  
+  function getCachedToken() {
+    try {
       const raw = localStorage.getItem(cacheKey);
-      if(!raw) return null;
+      if (!raw) return null;
       const {token, ts} = JSON.parse(raw);
-      if(Date.now() - ts > 20*60*60*1000) return null; // >20h old
+      if (Date.now() - ts > 20*60*60*1000) return null; // >20h old
       return token;
-    }catch{ return null; }
+    } catch {
+      return null;
+    }
   }
-  function setCachedToken(token){
-    try{ localStorage.setItem(cacheKey, JSON.stringify({token, ts: Date.now()})); }catch{}
+  
+  function setCachedToken(token) {
+    try {
+      localStorage.setItem(cacheKey, JSON.stringify({token, ts: Date.now()}));
+    } catch {}
   }
-
-  async function fetchToken(){
-    // show enhanced toast while we work
-    toast.classList.add("show");
-    try{
+  
+  async function fetchToken() {
+    try {
       const cached = getCachedToken();
-      if (cached) {
-        toast.textContent = "Connected! 🎉";
-        setTimeout(()=>toast.classList.remove("show"), 500);
-        return cached;
-      }
-
-      toast.textContent = "Authenticating…";
+      if (cached) return cached;
+      
       const payload = {
         student_id: LW_USER.id,
         email: LW_USER.email,
         name: LW_USER.username || ""
       };
-
+      
       const res = await fetch(`${BACKEND}/api/auth/token`, {
         method: "POST",
-        headers: {"Content-Type":"application/json"},
+        headers: {"Content-Type": "application/json"},
         body: JSON.stringify(payload)
       });
-      if(!res.ok){
-        const t = await res.text();
-        throw new Error(`Token error ${res.status}: ${t}`);
+      
+      if (!res.ok) {
+        throw new Error(`Token error ${res.status}`);
       }
+      
       const {token} = await res.json();
       setCachedToken(token);
-      toast.textContent = "Connected! 🎉";
-      setTimeout(()=>toast.classList.remove("show"), 500);
       return token;
-    } catch(err) {
-      toast.textContent = "Connection failed. Retrying…";
-      setTimeout(()=>toast.classList.remove("show"), 1000);
+    } catch (err) {
+      console.error("Token fetch failed:", err);
       throw err;
     }
   }
-
-  async function openChat(){
-    try{
-      panel.classList.add("open");
-      // lazy-load iframe only when opened
+  
+  // Set up button click
+  button.addEventListener("click", async (e) => {
+    e.preventDefault();
+    
+    try {
       const token = await fetchToken();
-      iframe.src = `${BACKEND}/chat?token=${encodeURIComponent(token)}`;
-      // Ensure focus and ESC to close
-      iframe.focus();
-    }catch(err){
-      panel.classList.remove("open");
-      toast.textContent = "Couldn't connect. Please try again.";
-      toast.classList.add("show");
-      setTimeout(()=>toast.classList.remove("show"), 2000);
-      console.warn("AI Tutor init failed:", err);
+      const url = `${BACKEND}/chat?token=${encodeURIComponent(token)}`;
+      window.open(url, '_blank', 'noopener,noreferrer');
+    } catch (err) {
+      alert("Unable to open AI Tutor. Please try again.");
+      console.error("Failed to open tutor:", err);
     }
-  }
-
-  function closeChat(){
-    panel.classList.remove("open");
-    // Keep session alive but hide panel
-  }
-
-  // Enhanced event listeners
-  btn.addEventListener("click", openChat);
-  close.addEventListener("click", closeChat);
-  
-  // Close on ESC key
-  document.addEventListener("keydown", (e)=>{ 
-    if(e.key === "Escape") closeChat(); 
   });
   
-  // Close when clicking outside panel
-  document.addEventListener("click", (e) => {
-    if (panel.classList.contains("open") && 
-        !panel.contains(e.target) && 
-        !btn.contains(e.target)) {
-      closeChat();
-    }
-  });
-
-  // Listen for close message from iframe
-  window.addEventListener("message", (e) => {
-    if (e.data === "closeChat") {
-      closeChat();
-    }
-  });
 })();
 </script>
-<!-- ===== /Enhanced Coherence Chat Launcher ===== -->
+<!-- /Enhanced Full-Page Integration -->

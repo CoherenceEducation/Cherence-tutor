@@ -4,30 +4,23 @@ import time
 from datetime import datetime, timedelta
 from functools import wraps
 from dotenv import load_dotenv
-from flask import Flask, request, jsonify, send_from_directory, render_template, render_template_string
+from flask import Flask, request, jsonify, send_from_directory, render_template
 from flask_cors import CORS
 from collections import defaultdict
 
 # Import utilities
 from utils.db import (
-    ensure_student_exists, 
-    get_conversation_history, 
-    save_message,
-    flag_content,
-    get_all_conversations,
-    get_student_stats,
-    check_rate_limit_mysql,
-    create_rate_limits_table,
-    ensure_admin_exists,
-    get_admin_info,
-    get_all_students,
-    get_student_conversations,
-    get_platform_analytics,
-    get_comprehensive_analytics,
-    create_admins_table
+    ensure_student_exists, get_conversation_history, save_message,
+    flag_content, get_all_conversations, get_student_stats,
+    check_rate_limit_mysql, create_rate_limits_table,
+    ensure_admin_exists, get_admin_info, get_all_students,
+    get_student_conversations, get_platform_analytics,
+    get_comprehensive_analytics, create_admins_table,
+    get_user_sessions, delete_user_session, get_session_messages,
+    update_session_title, create_session_metadata_table,
+    get_student_specific_analytics, search_students
 )
 from utils.gemini_client import get_tutor_response, check_content_safety
-from utils.db import get_student_specific_analytics, search_students
 
 load_dotenv()
 
@@ -36,28 +29,69 @@ app.config['SECRET_KEY'] = os.getenv('FLASK_SECRET_KEY')
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024
 app.config['JWT_SECRET'] = os.getenv('JWT_SECRET')
 
-# --- CORS (single setup, allow-list based) ---
-# Put your deployed origin(s) in ALLOWED_ORIGINS env, comma-separated.
-# Fallback includes LW + ngrok + example vercel host.
-# CRITICAL FIX: Remove trailing slashes and configure CORS properly
+# ==================== CORS CONFIGURATION ====================
 ALLOWED_ORIGINS = [
     "https://classes.coherenceeducation.org",
     "https://coherenceeducation.learnworlds.com",
     "https://cherence-tutor.vercel.app",
-    "http://localhost:5000",  # For local testing
+    "http://localhost:5000",
 ]
 
-# Configure CORS with explicit settings
 CORS(app,
      resources={r"/*": {"origins": ALLOWED_ORIGINS}},
      supports_credentials=True,
-     allow_headers=["Content-Type", "Authorization", "Accept"],
+     allow_headers=["Content-Type", "Authorization", "Accept", "X-Requested-With"],
      methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-     expose_headers=["Content-Type", "Authorization"],
      max_age=3600
 )
 
-# --- Admin email list (ENV-driven, with safe fallback) ---
+# ==================== SINGLE after_request HANDLER ====================
+@app.after_request
+def after_request(response):
+    """Add CORS and security headers to every response"""
+    origin = request.headers.get('Origin')
+    
+    # CORS headers
+    if origin in ALLOWED_ORIGINS:
+        response.headers['Access-Control-Allow-Origin'] = origin
+        response.headers['Access-Control-Allow-Credentials'] = 'true'
+        response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS'
+        response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization, Accept, X-Requested-With'
+        response.headers['Access-Control-Max-Age'] = '3600'
+    
+    # Security headers for iframes
+    lw_allow = [
+        "https://classes.coherenceeducation.org",
+        "https://*.learnworlds.com",
+        "https://coherenceeducation.learnworlds.com",
+    ]
+    response.headers["Content-Security-Policy"] = "frame-ancestors 'self' " + " ".join(lw_allow)
+    
+    if "X-Frame-Options" in response.headers:
+        response.headers.pop("X-Frame-Options")
+    
+    response.headers["ngrok-skip-browser-warning"] = "true"
+    response.headers["Cross-Origin-Opener-Policy"] = "same-origin-allow-popups"
+    response.headers["Cross-Origin-Embedder-Policy"] = "unsafe-none"
+    
+    return response
+
+# ==================== EXPLICIT OPTIONS HANDLER ====================
+@app.before_request
+def handle_preflight():
+    """Handle OPTIONS preflight requests explicitly"""
+    if request.method == "OPTIONS":
+        origin = request.headers.get('Origin')
+        if origin in ALLOWED_ORIGINS:
+            response = jsonify({'status': 'ok'})
+            response.headers['Access-Control-Allow-Origin'] = origin
+            response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS'
+            response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization, Accept, X-Requested-With'
+            response.headers['Access-Control-Allow-Credentials'] = 'true'
+            response.headers['Access-Control-Max-Age'] = '3600'
+            return response, 200
+
+# Admin emails
 ADMIN_EMAILS = {
     e.strip().lower() for e in os.getenv(
         'ADMIN_EMAILS',
@@ -67,24 +101,8 @@ ADMIN_EMAILS = {
     ).split(',') if e.strip()
 }
 
-# Rate limiting - hybrid approach (in-memory + MySQL)
+# Rate limiting
 request_counts = defaultdict(list)
-
-@app.after_request
-def after_request(response):
-    """Add CORS headers to every response"""
-    origin = request.headers.get('Origin')
-    
-    # Check if origin is allowed
-    if origin in ALLOWED_ORIGINS:
-        response.headers['Access-Control-Allow-Origin'] = origin
-        response.headers['Access-Control-Allow-Credentials'] = 'true'
-        response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS'
-        response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization, Accept, X-Requested-With'
-        response.headers['Access-Control-Expose-Headers'] = 'Content-Type, Authorization'
-        response.headers['Access-Control-Max-Age'] = '3600'
-    
-    return response
 
 def check_rate_limit(student_id, window_seconds=60, max_requests=5):
     """
