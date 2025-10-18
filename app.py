@@ -39,14 +39,19 @@ app.config['JWT_SECRET'] = os.getenv('JWT_SECRET')
 # --- CORS (single setup, allow-list based) ---
 # Put your deployed origin(s) in ALLOWED_ORIGINS env, comma-separated.
 # Fallback includes LW + ngrok + example vercel host.
-allowed_origins = [o.strip() for o in os.getenv('ALLOWED_ORIGINS', '').split(',') if o.strip()]
+# CRITICAL FIX: Remove trailing slashes and configure CORS properly
+allowed_origins = [o.strip().rstrip('/') for o in os.getenv('ALLOWED_ORIGINS', '').split(',') if o.strip()]
+
 CORS(app, origins=allowed_origins or [
     "https://classes.coherenceeducation.org",
     "https://coherenceeducation.learnworlds.com",
     "https://df3e8ea9dd4c.ngrok-free.app",
     "https://*.vercel.app",
     "https://cherence-tutor.vercel.app"
-], supports_credentials=True)
+], supports_credentials=True, allow_headers=['Content-Type', 'Authorization'],
+     methods=['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+     max_age=3600  # Cache preflight for 1 hour
+     )
 
 # --- Admin email list (ENV-driven, with safe fallback) ---
 ADMIN_EMAILS = {
@@ -61,6 +66,20 @@ ADMIN_EMAILS = {
 # Rate limiting - hybrid approach (in-memory + MySQL)
 request_counts = defaultdict(list)
 
+@app.before_request
+def handle_preflight():
+    if request.method == "OPTIONS":
+        response = app.make_default_options_response()
+        
+        origin = request.headers.get('Origin')
+        if origin in (allowed_origins or default_origins):
+            response.headers['Access-Control-Allow-Origin'] = origin
+            response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS'
+            response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization'
+            response.headers['Access-Control-Allow-Credentials'] = 'true'
+            response.headers['Access-Control-Max-Age'] = '3600'
+        
+        return response
 
 def check_rate_limit(student_id, window_seconds=60, max_requests=5):
     """
