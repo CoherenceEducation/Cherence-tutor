@@ -14,6 +14,9 @@ RUN apt-get update && apt-get install -y \
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
+# Install gunicorn for production
+RUN pip install gunicorn
+
 # Copy application code
 COPY . .
 
@@ -24,5 +27,5 @@ ENV PYTHONUNBUFFERED=1
 # Expose port
 EXPOSE 8080
 
-# Run the application
-CMD ["python", "api/index.py"]
+# Use gunicorn to run the Flask app (FIXED)
+CMD ["gunicorn", "--bind", "0.0.0.0:8080", "--workers", "2", "--threads", "4", "--timeout", "300", "api.index:app"]
