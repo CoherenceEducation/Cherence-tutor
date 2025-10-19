@@ -4,23 +4,30 @@ import time
 from datetime import datetime, timedelta
 from functools import wraps
 from dotenv import load_dotenv
-from flask import Flask, request, jsonify, send_from_directory, render_template
+from flask import Flask, request, jsonify, send_from_directory, render_template, render_template_string
 from flask_cors import CORS
 from collections import defaultdict
 
 # Import utilities
 from utils.db import (
-    ensure_student_exists, get_conversation_history, save_message,
-    flag_content, get_all_conversations, get_student_stats,
-    check_rate_limit_mysql, create_rate_limits_table,
-    ensure_admin_exists, get_admin_info, get_all_students,
-    get_student_conversations, get_platform_analytics,
-    get_comprehensive_analytics, create_admins_table,
-    get_user_sessions, delete_user_session, get_session_messages,
-    update_session_title, create_session_metadata_table,
-    get_student_specific_analytics, search_students
+    ensure_student_exists, 
+    get_conversation_history, 
+    save_message,
+    flag_content,
+    get_all_conversations,
+    get_student_stats,
+    check_rate_limit_mysql,
+    create_rate_limits_table,
+    ensure_admin_exists,
+    get_admin_info,
+    get_all_students,
+    get_student_conversations,
+    get_platform_analytics,
+    get_comprehensive_analytics,
+    create_admins_table
 )
 from utils.gemini_client import get_tutor_response, check_content_safety
+from utils.db import get_student_specific_analytics, search_students
 
 load_dotenv()
 
@@ -29,70 +36,19 @@ app.config['SECRET_KEY'] = os.getenv('FLASK_SECRET_KEY')
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024
 app.config['JWT_SECRET'] = os.getenv('JWT_SECRET')
 
-# ==================== CORS CONFIGURATION ====================
-ALLOWED_ORIGINS = [
+# --- CORS (single setup, allow-list based) ---
+# Put your deployed origin(s) in ALLOWED_ORIGINS env, comma-separated.
+# Fallback includes LW + ngrok + example vercel host.
+allowed_origins = [o.strip() for o in os.getenv('ALLOWED_ORIGINS', '').split(',') if o.strip()]
+CORS(app, origins=allowed_origins or [
     "https://classes.coherenceeducation.org",
     "https://coherenceeducation.learnworlds.com",
-    "https://cherence-tutor.vercel.app",
-    "http://localhost:5000",
-]
+    "https://df3e8ea9dd4c.ngrok-free.app",
+    "https://*.vercel.app",
+    "https://cherence-tutor.vercel.app"
+], supports_credentials=True)
 
-CORS(app,
-     resources={r"/*": {"origins": ALLOWED_ORIGINS}},
-     supports_credentials=True,
-     allow_headers=["Content-Type", "Authorization", "Accept", "X-Requested-With"],
-     methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-     max_age=3600
-)
-
-
-@app.after_request
-def after_request(response):
-    origin = request.headers.get('Origin', '')
-    # DEBUG LOG
-    try:
-        print(f"[CORS] {request.method} {request.path} Origin={origin}")
-    except Exception:
-        pass
-
-    if origin in ALLOWED_ORIGINS:
-        response.headers['Access-Control-Allow-Origin'] = origin
-        response.headers['Vary'] = 'Origin'
-        response.headers['Access-Control-Allow-Credentials'] = 'true'
-        response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS'
-        response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization, Accept, X-Requested-With'
-        response.headers['Access-Control-Max-Age'] = '3600'
-
-    # Security headers
-    lw_allow = [
-        "https://classes.coherenceeducation.org",
-        "https://*.learnworlds.com",
-        "https://coherenceeducation.learnworlds.com",
-    ]
-    response.headers["Content-Security-Policy"] = "frame-ancestors 'self' " + " ".join(lw_allow)
-    if "X-Frame-Options" in response.headers:
-        response.headers.pop("X-Frame-Options")
-    response.headers["ngrok-skip-browser-warning"] = "true"
-    response.headers["Cross-Origin-Opener-Policy"] = "same-origin-allow-popups"
-    response.headers["Cross-Origin-Embedder-Policy"] = "unsafe-none"
-    return response
-
-# ==================== EXPLICIT OPTIONS HANDLER ====================
-@app.before_request
-def handle_preflight():
-    """Handle OPTIONS preflight requests explicitly"""
-    if request.method == "OPTIONS":
-        origin = request.headers.get('Origin')
-        if origin in ALLOWED_ORIGINS:
-            response = jsonify({'status': 'ok'})
-            response.headers['Access-Control-Allow-Origin'] = origin
-            response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS'
-            response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization, Accept, X-Requested-With'
-            response.headers['Access-Control-Allow-Credentials'] = 'true'
-            response.headers['Access-Control-Max-Age'] = '3600'
-            return response, 200
-
-# Admin emails
+# --- Admin email list (ENV-driven, with safe fallback) ---
 ADMIN_EMAILS = {
     e.strip().lower() for e in os.getenv(
         'ADMIN_EMAILS',
@@ -102,8 +58,9 @@ ADMIN_EMAILS = {
     ).split(',') if e.strip()
 }
 
-# Rate limiting
+# Rate limiting - hybrid approach (in-memory + MySQL)
 request_counts = defaultdict(list)
+
 
 def check_rate_limit(student_id, window_seconds=60, max_requests=5):
     """
@@ -523,6 +480,31 @@ def admin_dashboard():
     return resp
 
 
+@app.after_request
+def add_security_headers(resp):
+    """Allow LearnWorlds pages to embed the chat iframe."""
+    lw_allow = [
+        "https://classes.coherenceeducation.org",
+        "https://*.learnworlds.com",
+        "https://coherenceeducation.learnworlds.com",
+    ]
+
+    # Allow the LW site to frame /chat
+    resp.headers["Content-Security-Policy"] = (
+        "frame-ancestors 'self' " + " ".join(lw_allow)
+    )
+
+    # Remove X-Frame-Options if present
+    if "X-Frame-Options" in resp.headers:
+        resp.headers.pop("X-Frame-Options")
+
+    # Skip ngrok’s browser warning inside iframes
+    resp.headers["ngrok-skip-browser-warning"] = "true"
+
+    # Optional: make iframes happier
+    resp.headers["Cross-Origin-Opener-Policy"] = "same-origin-allow-popups"
+    resp.headers["Cross-Origin-Embedder-Policy"] = "unsafe-none"
+    return resp
 
 
 
@@ -561,89 +543,6 @@ def admin_search_students():
         "count": len(students)
     }), 200
 
-# Add these new endpoints to your app.py file
-
-@app.route('/api/sessions', methods=['GET'])
-@require_auth
-def get_sessions():
-    """Get all chat sessions for the authenticated user"""
-    try:
-        student_id = request.user_id
-        limit = int(request.args.get('limit', 50))
-        
-        sessions = get_user_sessions(student_id, limit)
-        return jsonify({
-            "sessions": sessions,
-            "count": len(sessions)
-        }), 200
-    except Exception as e:
-        print(f"Error fetching sessions: {e}")
-        return jsonify({"error": str(e)}), 500
-
-
-@app.route('/api/sessions/<session_id>', methods=['DELETE'])
-@require_auth
-def delete_session(session_id):
-    """Delete a specific chat session"""
-    try:
-        student_id = request.user_id
-        
-        # Verify ownership
-        success = delete_user_session(student_id, session_id)
-        
-        if success:
-            return jsonify({"message": "Session deleted successfully"}), 200
-        else:
-            return jsonify({"error": "Session not found or unauthorized"}), 404
-    except Exception as e:
-        print(f"Error deleting session: {e}")
-        return jsonify({"error": str(e)}), 500
-
-
-@app.route('/api/history', methods=['GET'])
-@require_auth
-def get_history():
-    """Get conversation history (with optional session filter)"""
-    try:
-        student_id = request.user_id
-        session_id = request.args.get('session_id')
-        limit = int(request.args.get('limit', 50))
-        
-        if session_id:
-            # Get history for specific session
-            history = get_session_messages(student_id, session_id, limit)
-        else:
-            # Get recent history across all sessions
-            history = get_conversation_history(student_id, limit=limit)
-        
-        return jsonify({"history": history}), 200
-    except Exception as e:
-        print(f"Error fetching history: {e}")
-        return jsonify({"error": str(e)}), 500
-
-
-@app.route('/api/sessions/<session_id>/rename', methods=['PUT'])
-@require_auth
-def rename_session(session_id):
-    """Rename a chat session"""
-    try:
-        student_id = request.user_id
-        data = request.get_json()
-        new_title = data.get('title', '').strip()
-        
-        if not new_title:
-            return jsonify({"error": "Title is required"}), 400
-        
-        success = update_session_title(student_id, session_id, new_title)
-        
-        if success:
-            return jsonify({"message": "Session renamed successfully"}), 200
-        else:
-            return jsonify({"error": "Session not found or unauthorized"}), 404
-    except Exception as e:
-        print(f"Error renaming session: {e}")
-        return jsonify({"error": str(e)}), 500
-
 
 @app.route("/")
 def home():
@@ -654,8 +553,6 @@ if __name__ == "__main__":
     print("🔧 Initializing database tables...")
     create_rate_limits_table()
     create_admins_table()
-    create_session_metadata_table()  # NEW
-
     
     port = int(os.getenv("PORT", 5000))
     app.run(
