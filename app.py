@@ -54,7 +54,7 @@ ADMIN_EMAILS = {
         'ADMIN_EMAILS',
         'andrew@coherence.org,mina@coherenceeducation.org,'
         'support@coherenceeducation.org,evan.senour@gmail.com,'
-        'gavinli.automation@gmail.com'
+        'gavinli.automation@gmail.com,gavin@coherenceeducation.org'
     ).split(',') if e.strip()
 }
 
