@@ -36,9 +36,27 @@ app.config['SECRET_KEY'] = os.getenv('FLASK_SECRET_KEY')
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024
 app.config['JWT_SECRET'] = os.getenv('JWT_SECRET')
 
+# Track if DB is initialized
+_db_initialized = False
+
+def ensure_db_initialized():
+    """Lazy initialization of database tables on first use"""
+    global _db_initialized
+    if _db_initialized:
+        return
+    
+    try:
+        print("🔧 Initializing database tables...")
+        create_rate_limits_table()
+        create_admins_table()
+        _db_initialized = True
+        print("✅ Database initialized successfully")
+    except Exception as e:
+        print(f"⚠️ Database initialization warning: {e}")
+        # Don't crash - allow app to run even if DB init fails
+        _db_initialized = True
+
 # --- CORS (single setup, allow-list based) ---
-# Put your deployed origin(s) in ALLOWED_ORIGINS env, comma-separated.
-# Fallback includes LW + ngrok + example vercel host.
 allowed_origins = [o.strip() for o in os.getenv('ALLOWED_ORIGINS', '').split(',') if o.strip()]
 CORS(app, origins=allowed_origins or [
     "https://classes.coherenceeducation.org",
@@ -54,7 +72,7 @@ ADMIN_EMAILS = {
         'ADMIN_EMAILS',
         'andrew@coherence.org,mina@coherenceeducation.org,'
         'support@coherenceeducation.org,evan.senour@gmail.com,'
-        'gavinli.automation@gmail.com,gavin@coherenceeducation.org'
+        'gavinli.automation@gmail.com,gavin@coherenceeducation.org,andrew@coherenceeducation.org'
     ).split(',') if e.strip()
 }
 
@@ -121,6 +139,7 @@ def require_auth(f):
     """Decorator to require JWT authentication"""
     @wraps(f)
     def decorated_function(*args, **kwargs):
+        ensure_db_initialized()  # Lazy init
         token = request.headers.get('Authorization')
         if not token:
             return jsonify({"error": "No token provided"}), 401
@@ -145,6 +164,7 @@ def require_admin(f):
     """Decorator to require admin authentication"""
     @wraps(f)
     def decorated_function(*args, **kwargs):
+        ensure_db_initialized()  # Lazy init
         token = request.headers.get('Authorization')
         if token and token.startswith('Bearer '):
             token = token[7:]
@@ -182,6 +202,7 @@ def health_check():
 @app.route('/api/auth/token', methods=['POST'])
 def generate_token():
     try:
+        ensure_db_initialized()  # Lazy init
         print("📩 Incoming request to /api/auth/token")
 
         data = request.get_json(force=True) or {}
@@ -204,6 +225,8 @@ def generate_token():
         
         if is_admin:
             ensure_admin_exists(student_id, email, name)
+            # IMPORTANT: Also create student record so admin chats are stored
+            ensure_student_exists(student_id, email, name)
             print(f"🔐 Admin access granted to {email}")
         else:
             ensure_student_exists(student_id, email, name)
@@ -222,8 +245,6 @@ def generate_token():
     except Exception as e:
         print("💥 Exception in /api/auth/token:", str(e))
         return jsonify({"error": str(e)}), 400
-
-
 
 
 def verify_learnworlds_signature(payload, signature):
@@ -266,12 +287,12 @@ def chat():
         name = request.user_name
         
         # Rate limiting - production settings
-        max_req = int(os.getenv("MAX_REQUESTS_PER_MINUTE", 10))  # Reasonable for production
+        max_req = int(os.getenv("MAX_REQUESTS_PER_MINUTE", 10))
         print(f"🚦 Checking rate limit for student {student_id}: max {max_req} requests per minute")
         if not check_rate_limit(student_id, 60, max_req):
             print(f"🚦 Rate limit hit for student {student_id}")
             return jsonify({
-                "error": "You're asking too many questions too quickly! Take a breath and try again in a minute 😊"
+                "error": "You're asking too many questions too quickly! Take a breath and try again in a minute"
             }), 429
 
         
@@ -294,26 +315,26 @@ def chat():
                     "- Call or text 988 (Suicide & Crisis Lifeline, 24/7)\n"
                     "- Text 'HELLO' to 741741 (Crisis Text Line)\n"
                     "- Call 911 if you're in immediate danger\n\n"
-                    "You don't have to face difficult feelings alone. There are people who care and want to help. 💙"
+                    "You don't have to face difficult feelings alone. There are people who care and want to help."
                 )
 
             elif severity == "high":
                 safe_response = (
                     "I understand you're feeling strong emotions right now. "
                     "It's okay to feel frustrated, but let's try to keep things respectful and positive. "
-                    "Instead of focusing on negative thoughts, how about we talk about something educational or inspiring? 🌱 "
-                    "Maybe we can explore a topic you're curious about today? 🎓"
+                    "Instead of focusing on negative thoughts, how about we talk about something educational or inspiring? "
+                    "Maybe we can explore a topic you're curious about today?"
                 )
 
             elif severity == "medium":
                 safe_response = (
                     "I'm here to help with your learning! Let's keep our conversation positive and educational. "
-                    "What subject or topic interests you most today? 🎓"
+                    "What subject or topic interests you most today?"
                 )
 
             else:  # low severity
                 safe_response = (
-                    "Let's keep our conversation focused on learning! What would you like to explore today? 🌟"
+                    "Let's keep our conversation focused on learning! What would you like to explore today?"
                 )
 
             save_message(student_id, 'tutor', safe_response, session_id=session_id)
@@ -498,7 +519,7 @@ def add_security_headers(resp):
     if "X-Frame-Options" in resp.headers:
         resp.headers.pop("X-Frame-Options")
 
-    # Skip ngrok’s browser warning inside iframes
+    # Skip ngrok's browser warning inside iframes
     resp.headers["ngrok-skip-browser-warning"] = "true"
 
     # Optional: make iframes happier
@@ -543,16 +564,14 @@ def admin_search_students():
         "count": len(students)
     }), 200
 
-#test
+
 @app.route("/")
 def home():
     return render_template("chat.html")
 
 if __name__ == "__main__":
-    # Initialize database tables
-    print("🔧 Initializing database tables...")
-    create_rate_limits_table()
-    create_admins_table()
+    # ⚠️ For local development only - Vercel uses WSGI, not __main__
+    ensure_db_initialized()
     
     port = int(os.getenv("PORT", 5000))
     app.run(
