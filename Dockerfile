@@ -28,10 +28,5 @@ ENV FLASK_ENV=production
 # Expose port
 EXPOSE 8080
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-  CMD python -c "import requests; requests.get('http://localhost:8080/health', timeout=5)"
-
-# Use gunicorn with proper app module path
-# Key fix: Use index:app (not app:app) since your entry point is index.py
+# Use gunicorn - Cloud Run has its own health checks
 CMD exec gunicorn --bind :$PORT --workers 2 --threads 4 --timeout 300 --access-logfile - --error-logfile - index:app

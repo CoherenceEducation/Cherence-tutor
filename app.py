@@ -63,14 +63,15 @@ CORS(app, origins=allowed_origins or [
     "https://coherenceeducation.learnworlds.com",
     "https://df3e8ea9dd4c.ngrok-free.app",
     "https://*.vercel.app",
-    "https://cherence-tutor.vercel.app"
+    "https://cherence-tutor.vercel.app",
+    "https://clarence.coherenceeducation.org"
 ], supports_credentials=True)
 
 # --- Admin email list (ENV-driven, with safe fallback) ---
 ADMIN_EMAILS = {
     e.strip().lower() for e in os.getenv(
         'ADMIN_EMAILS',
-        'andrew@coherence.org,mina@coherenceeducation.org,'
+        'andrew@coherence.org,mina@coherenceeducation.org,' 
         'support@coherenceeducation.org,evan.senour@gmail.com,'
         'gavinli.automation@gmail.com,gavin@coherenceeducation.org,andrew@coherenceeducation.org'
     ).split(',') if e.strip()
