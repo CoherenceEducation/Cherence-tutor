@@ -518,6 +518,17 @@
         <div class="error-message" id="errorMessage"></div>
         <div class="info-message" id="infoMessage"></div>
         
+        <!-- Permission Prompt Overlay -->
+        <div class="permission-overlay" id="permissionOverlay"></div>
+        <div class="permission-prompt" id="permissionPrompt">
+            <h3>🎤 Enable Voice Input</h3>
+            <p>To use voice input, we need access to your microphone. Your voice will be converted to text directly in your browser - no audio is recorded or stored.</p>
+            <div class="permission-buttons">
+                <button class="cancel-btn" id="cancelPermission">Cancel</button>
+                <button class="allow-btn" id="allowPermission">Allow Microphone</button>
+            </div>
+        </div>
+        
         <div class="input-area">
             <div class="input-wrapper">
                 <div class="voice-status" id="voiceStatus">
@@ -567,6 +578,10 @@
         const errorMessage = document.getElementById('errorMessage');
         const infoMessage = document.getElementById('infoMessage');
         const welcomeMessage = document.getElementById('welcomeMessage');
+        const permissionPrompt = document.getElementById('permissionPrompt');
+        const permissionOverlay = document.getElementById('permissionOverlay');
+        const allowPermissionBtn = document.getElementById('allowPermission');
+        const cancelPermissionBtn = document.getElementById('cancelPermission');
         
         // Check browser support for Speech Recognition
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -574,16 +589,20 @@
         
         // Check microphone permission status
         async function checkMicrophonePermission() {
-            if (!navigator.permissions || !navigator.permissions.query) {
-                return 'prompt'; // Can't check, assume needs prompt
+            // Safari and some browsers don't support permissions.query for microphone
+            // So we'll just return 'unknown' and let the actual recognition.start() handle it
+            if (!navigator.permissions) {
+                return 'unknown';
             }
             
             try {
                 const result = await navigator.permissions.query({ name: 'microphone' });
+                console.log('Permission state:', result.state);
                 return result.state; // 'granted', 'denied', or 'prompt'
             } catch (error) {
-                console.log('Permission query not supported:', error);
-                return 'prompt';
+                // Permission query not supported (like in Safari), return unknown
+                console.log('Permission query not supported, will try to start recognition directly');
+                return 'unknown';
             }
         }
         
@@ -630,19 +649,24 @@
                 
                 switch(event.error) {
                     case 'no-speech':
-                        errorMsg = 'No speech detected. Please try again.';
+                        errorMsg = 'No speech detected. Please try again and speak clearly.';
                         break;
                     case 'audio-capture':
-                        errorMsg = 'No microphone found. Please check your device.';
+                        errorMsg = 'No microphone found. Please check your device and try again.';
                         break;
                     case 'not-allowed':
-                        errorMsg = 'Please allow microphone access to use voice input.';
+                        errorMsg = 'Microphone access denied. Please click the lock icon (🔒) in your browser\'s address bar and allow microphone access, then try again.';
                         break;
                     case 'network':
-                        errorMsg = 'Network error. Please check your connection.';
+                        errorMsg = 'Network error. Please check your connection and try again.';
                         break;
                     case 'aborted':
-                        errorMsg = 'Voice input cancelled.';
+                        // Don't show error for user-initiated abort
+                        console.log('Speech recognition aborted by user');
+                        stopListening();
+                        return;
+                    case 'service-not-allowed':
+                        errorMsg = 'Speech recognition service not available. Please ensure you\'re using HTTPS and try again.';
                         break;
                 }
                 
@@ -658,40 +682,100 @@
             return true;
         }
         
+        // Show custom permission prompt
+        function showPermissionPrompt() {
+            permissionOverlay.classList.add('show');
+            permissionPrompt.classList.add('show');
+            console.log('Custom permission prompt shown');
+        }
+        
+        // Hide custom permission prompt
+        function hidePermissionPrompt() {
+            permissionOverlay.classList.remove('show');
+            permissionPrompt.classList.remove('show');
+            console.log('Custom permission prompt hidden');
+        }
+        
+        // Handle allow permission button
+        allowPermissionBtn.addEventListener('click', () => {
+            console.log('User clicked Allow Microphone button');
+            hidePermissionPrompt();
+            // Small delay to ensure prompt is hidden before starting
+            setTimeout(() => {
+                actuallyStartListening();
+            }, 100);
+        });
+        
+        // Handle cancel permission button
+        cancelPermissionBtn.addEventListener('click', () => {
+            hidePermissionPrompt();
+            showInfo('Voice input cancelled. You can type your message instead.');
+        });
+        
+        // Close prompt when clicking overlay
+        permissionOverlay.addEventListener('click', () => {
+            hidePermissionPrompt();
+        });
+        
+        function actuallyStartListening() {
+            try {
+                // This will trigger browser's native permission prompt if not yet granted
+                recognition.start();
+                console.log('🎤 Speech recognition start requested');
+            } catch (error) {
+                console.error('Error starting recognition:', error);
+                
+                // Handle the "already started" error
+                if (error.name === 'InvalidStateError') {
+                    console.log('Recognition already running, stopping first...');
+                    recognition.stop();
+                    setTimeout(() => {
+                        try {
+                            recognition.start();
+                            console.log('🎤 Speech recognition restarted');
+                        } catch (e) {
+                            console.error('Failed to restart recognition:', e);
+                            showError('Could not start voice input. Please try again.');
+                        }
+                    }, 200);
+                } else {
+                    showError('Could not start voice input. Please try again.');
+                }
+            }
+        }
+        
         function startListening() {
             if (!recognition) {
                 showError('Voice input is not available in your browser.');
                 return;
             }
             
-            // Check permission state before starting
+            console.log('Starting listening process...');
+            
+            // Simpler approach: just try to start, let the browser handle permissions
+            // This is more reliable than trying to check permissions first
+            actuallyStartListening();
+            
+            /* 
+            // Alternative: Check permissions first (can be flaky in some browsers)
             checkMicrophonePermission().then(permissionState => {
+                console.log('Detected permission state:', permissionState);
+                
                 if (permissionState === 'denied') {
-                    showError('Microphone access denied. Please allow microphone access in your browser settings.');
+                    showError('Microphone access was previously denied. Please click the lock icon (🔒) in your browser\'s address bar and allow microphone access.');
                     return;
                 }
                 
-                try {
-                    // This will trigger browser's permission prompt if not yet granted
-                    recognition.start();
-                    console.log('🎤 Starting speech recognition...');
-                } catch (error) {
-                    console.error('Error starting recognition:', error);
-                    if (error.name === 'InvalidStateError') {
-                        // Recognition already started, stop and restart
-                        recognition.stop();
-                        setTimeout(() => {
-                            try {
-                                recognition.start();
-                            } catch (e) {
-                                showError('Could not start voice input. Please try again.');
-                            }
-                        }, 100);
-                    } else {
-                        showError('Could not start voice input. Please try again.');
-                    }
+                if (permissionState === 'prompt') {
+                    showPermissionPrompt();
+                } else {
+                    actuallyStartListening();
                 }
+            }).catch(error => {
+                console.log('Permission check failed, attempting to start anyway:', error);
+                actuallyStartListening();
             });
+            */
         }
         
         function stopListening() {
@@ -705,9 +789,18 @@
         
         // Microphone button click handler
         micButton.addEventListener('click', () => {
+            console.log('🎤 Microphone button clicked, isListening:', isListening);
+            
             if (isListening) {
-                recognition.stop();
+                // Stop if already listening
+                console.log('Stopping recognition...');
+                try {
+                    recognition.stop();
+                } catch (e) {
+                    console.error('Error stopping recognition:', e);
+                }
             } else {
+                // Start listening
                 startListening();
             }
         });
