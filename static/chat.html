@@ -334,17 +334,26 @@
         .voice-status {
             font-size: 12px;
             color: #666;
-            padding: 4px 12px;
+            padding: 8px 16px;
             background: rgba(247, 181, 56, 0.1);
-            border-radius: 6px;
+            border-radius: 8px;
             display: none;
             align-items: center;
-            gap: 6px;
+            gap: 8px;
+            max-width: 100%;
+            overflow: hidden;
         }
         
         .voice-status.active {
             display: flex;
             animation: slideIn 0.3s ease;
+        }
+        
+        .voice-status span:last-child {
+            flex: 1;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
         }
         
         .voice-status .pulse-dot {
@@ -353,30 +362,6 @@
             background: #ff4444;
             border-radius: 50%;
             animation: pulse-dot 1.5s infinite;
-        }
-        
-        .voice-transcript-display {
-            font-size: 13px;
-            color: #023047;
-            padding: 12px 18px;
-            background: white;
-            border: 2px solid rgba(247, 181, 56, 0.4);
-            border-radius: 12px;
-            min-height: 52px;
-            max-height: 200px;
-            overflow-y: auto;
-            display: none;
-            line-height: 1.6;
-        }
-        
-        .voice-transcript-display.active {
-            display: block;
-            animation: slideIn 0.3s ease;
-        }
-        
-        .voice-transcript-display:empty::before {
-            content: 'Start speaking...';
-            color: #999;
         }
         
         @keyframes pulse-dot {
@@ -639,7 +624,6 @@
                     <span class="pulse-dot"></span>
                     <span>Listening... speak now</span>
                 </div>
-                <div class="voice-transcript-display" id="voiceTranscriptDisplay"></div>
                 <div class="input-controls">
                     <textarea 
                         id="messageInput" 
@@ -701,7 +685,6 @@
         const voiceCancelBtn = document.getElementById('voiceCancelBtn');
         const voiceConfirmBtn = document.getElementById('voiceConfirmBtn');
         const voiceStatus = document.getElementById('voiceStatus');
-        const voiceTranscriptDisplay = document.getElementById('voiceTranscriptDisplay');
         const privacyNotice = document.getElementById('privacyNotice');
         const errorMessage = document.getElementById('errorMessage');
         const infoMessage = document.getElementById('infoMessage');
@@ -713,6 +696,7 @@
         
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         const speechSupported = !!SpeechRecognition;
+        let fullTranscript = '';
         
         function initSpeechRecognition() {
             if (!speechSupported) {
@@ -729,42 +713,37 @@
             
             recognition.onstart = () => {
                 isListening = true;
-                accumulatedTranscript = '';
+                fullTranscript = '';
                 micButton.style.display = 'none';
                 voiceControls.classList.add('active');
                 voiceStatus.classList.add('active');
-                voiceTranscriptDisplay.classList.add('active');
                 privacyNotice.classList.add('active');
-                voiceTranscriptDisplay.innerHTML = 'Start speaking...';
-                messageInput.style.display = 'none';
+                voiceStatus.innerHTML = `<span class="pulse-dot"></span><span>Listening... speak now</span>`;
                 console.log('🎤 Speech recognition started');
             };
             
-            let accumulatedTranscript = '';
+            let fullTranscript = '';
             
             recognition.onresult = (event) => {
                 let interimTranscript = '';
-                let finalTranscript = '';
+                fullTranscript = '';
                 
-                for (let i = event.resultIndex; i < event.results.length; i++) {
+                for (let i = 0; i < event.results.length; i++) {
                     const transcript = event.results[i][0].transcript;
                     if (event.results[i].isFinal) {
-                        finalTranscript += transcript + ' ';
+                        fullTranscript += transcript + ' ';
                     } else {
                         interimTranscript += transcript;
                     }
                 }
                 
-                // Add final transcript to accumulated text
-                if (finalTranscript) {
-                    accumulatedTranscript += finalTranscript;
+                // Show only in voice status area, not in input
+                const displayText = (fullTranscript + interimTranscript).trim();
+                if (displayText) {
+                    voiceStatus.innerHTML = `<span class="pulse-dot"></span><span>${displayText}</span>`;
                 }
                 
-                // Show accumulated + interim in the display area
-                const displayText = accumulatedTranscript + (interimTranscript ? '<span style="color: #999;">' + interimTranscript + '</span>' : '');
-                voiceTranscriptDisplay.innerHTML = displayText || 'Start speaking...';
-                
-                console.log(`📝 Voice: "${accumulatedTranscript}${interimTranscript}"`);
+                console.log(`📝 Transcript: "${displayText}"`);
             };
             
             recognition.onerror = (event) => {
@@ -864,29 +843,28 @@
             }
         }
         
-        function stopListening(clearText = true) {
+        function stopListening(transferToInput = false) {
             isListening = false;
             voiceControls.classList.remove('active');
-            voiceTranscriptDisplay.classList.remove('active');
             micButton.style.display = '';
             voiceStatus.classList.remove('active');
-            messageInput.style.display = '';
             
-            if (clearText) {
-                messageInput.value = '';
-                accumulatedTranscript = '';
-            } else {
-                // User pressed tick - put the accumulated text into input for editing
-                messageInput.value = accumulatedTranscript.trim();
+            if (transferToInput && fullTranscript) {
+                // Transfer the transcript to input box
+                messageInput.value = fullTranscript.trim();
+                messageInput.style.height = 'auto';
+                messageInput.style.height = Math.min(messageInput.scrollHeight, 200) + 'px';
+                messageInput.focus();
+                
+                // Show success message
+                showInfo('Voice input captured! Edit if needed, then press Send.');
             }
             
-            messageInput.disabled = false;
-            messageInput.style.height = 'auto';
-            messageInput.style.height = Math.min(messageInput.scrollHeight, 200) + 'px';
-            messageInput.focus();
+            fullTranscript = '';
             
             setTimeout(() => {
                 privacyNotice.classList.remove('active');
+                voiceStatus.innerHTML = `<span class="pulse-dot"></span><span>Listening... speak now</span>`;
             }, 3000);
             
             try {
@@ -907,13 +885,12 @@
         
         voiceCancelBtn.addEventListener('click', () => {
             console.log('❌ Voice input cancelled');
-            stopListening(true);
+            stopListening(false);
         });
         
         voiceConfirmBtn.addEventListener('click', () => {
             console.log('✅ Voice input confirmed');
-            stopListening(false);
-            // Don't auto-send, just populate the input for user to review/edit
+            stopListening(true);
         });
         
         messageInput.addEventListener('input', function() {
