@@ -413,8 +413,9 @@
         }
         
         .info-message {
-            background: #4CAF50;
+            background: linear-gradient(135deg, #023047 0%, #126782 100%);
             color: white;
+            box-shadow: 0 2px 8px rgba(2, 48, 71, 0.2);
         }
         
         .welcome-message {
@@ -723,29 +724,29 @@
             };
             
             recognition.onresult = (event) => {
-            let interimTranscript = '';
-            let finalTranscript = '';
-            
-            // Process all results
-            for (let i = 0; i < event.results.length; i++) {
-                const transcript = event.results[i][0].transcript;
-                if (event.results[i].isFinal) {
-                    finalTranscript += transcript + ' ';
-                } else {
-                    interimTranscript += transcript;
+                let interimTranscript = '';
+                let finalTranscript = '';
+                
+                // Process all results
+                for (let i = 0; i < event.results.length; i++) {
+                    const transcript = event.results[i][0].transcript;
+                    if (event.results[i].isFinal) {
+                        finalTranscript += transcript + ' ';
+                    } else {
+                        interimTranscript += transcript;
+                    }
                 }
-            }
-            
-            // Update stored transcript with finalized parts
-            if (finalTranscript) {
-                fullTranscript = finalTranscript.trim();
-            }
-            
-            // Display both final and interim
-            const displayText = (fullTranscript + ' ' + interimTranscript).trim();
-            voiceStatus.innerHTML = `<span class="pulse-dot"></span><span>${displayText || 'Listening...'}</span>`;
-            
-            console.log('Final stored:', fullTranscript, '| Current interim:', interimTranscript);
+                
+                // Update stored transcript with finalized parts
+                if (finalTranscript) {
+                    fullTranscript = finalTranscript.trim();
+                }
+                
+                // Display both final and interim
+                const displayText = (fullTranscript + ' ' + interimTranscript).trim();
+                voiceStatus.innerHTML = `<span class="pulse-dot"></span><span>${displayText || 'Listening...'}</span>`;
+                
+                console.log('Final stored:', fullTranscript, '| Current interim:', interimTranscript);
             };
             
             recognition.onerror = (event) => {
@@ -829,30 +830,33 @@
                 recognition.stop();
             } catch (e) {}
             
-            voiceControls.classList.remove('active');
-            micButton.style.display = '';
-            voiceStatus.classList.remove('active');
-            
-            if (transferToInput) {
-                const text = fullTranscript.trim();
-                
-                if (text) {
-                    messageInput.value = text;
-                    messageInput.style.height = 'auto';
-                    messageInput.style.height = Math.min(messageInput.scrollHeight, 200) + 'px';
-                    messageInput.focus();
-                    showInfo('Voice captured successfully');
-                } else {
-                    showInfo('No speech detected');
-                }
-            }
-            
-            fullTranscript = '';
-            
+            // Small delay to ensure final results are captured
             setTimeout(() => {
-                privacyNotice.classList.remove('active');
-                voiceStatus.innerHTML = `<span class="pulse-dot"></span><span>Listening...</span>`;
-            }, 2000);
+                voiceControls.classList.remove('active');
+                micButton.style.display = '';
+                voiceStatus.classList.remove('active');
+                
+                if (transferToInput) {
+                    const text = fullTranscript.trim();
+                    
+                    if (text) {
+                        messageInput.value = text;
+                        messageInput.style.height = 'auto';
+                        messageInput.style.height = Math.min(messageInput.scrollHeight, 200) + 'px';
+                        messageInput.focus();
+                        showInfo('Voice captured successfully');
+                    } else {
+                        showInfo('No speech detected');
+                    }
+                }
+                
+                fullTranscript = '';
+                
+                setTimeout(() => {
+                    privacyNotice.classList.remove('active');
+                    voiceStatus.innerHTML = `<span class="pulse-dot"></span><span>Listening...</span>`;
+                }, 2000);
+            }, 300); // Give time for final results
         }
         
         micButton.addEventListener('click', () => {
