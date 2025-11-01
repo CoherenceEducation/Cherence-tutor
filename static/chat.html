@@ -719,7 +719,7 @@
                 voiceControls.classList.add('active');
                 voiceStatus.classList.add('active');
                 privacyNotice.classList.add('active');
-                voiceStatus.innerHTML = `<span class="pulse-dot"></span><span>Listening...</span>`;
+                voiceStatus.innerHTML = '<span class="pulse-dot"></span><span>Listening...</span>';
                 console.log('🎤 Started');
             };
             
@@ -727,7 +727,6 @@
                 let interimTranscript = '';
                 let finalTranscript = '';
                 
-                // Process all results
                 for (let i = 0; i < event.results.length; i++) {
                     const transcript = event.results[i][0].transcript;
                     if (event.results[i].isFinal) {
@@ -737,14 +736,12 @@
                     }
                 }
                 
-                // Update stored transcript with finalized parts
                 if (finalTranscript) {
                     fullTranscript = finalTranscript.trim();
                 }
                 
-                // Display both final and interim
                 const displayText = (fullTranscript + ' ' + interimTranscript).trim();
-                voiceStatus.innerHTML = `<span class="pulse-dot"></span><span>${displayText || 'Listening...'}</span>`;
+                voiceStatus.innerHTML = '<span class="pulse-dot"></span><span>' + (displayText || 'Listening...') + '</span>';
                 
                 console.log('Final stored:', fullTranscript, '| Current interim:', interimTranscript);
             };
@@ -823,14 +820,13 @@
             }
         }
         
-        function stopListening(transferToInput = false) {
+        function stopListening(transferToInput) {
             isListening = false;
             
             try {
                 recognition.stop();
             } catch (e) {}
             
-            // Small delay to ensure final results are captured
             setTimeout(() => {
                 voiceControls.classList.remove('active');
                 micButton.style.display = '';
@@ -854,9 +850,9 @@
                 
                 setTimeout(() => {
                     privacyNotice.classList.remove('active');
-                    voiceStatus.innerHTML = `<span class="pulse-dot"></span><span>Listening...</span>`;
+                    voiceStatus.innerHTML = '<span class="pulse-dot"></span><span>Listening...</span>';
                 }, 2000);
-            }, 300); // Give time for final results
+            }, 300);
         }
         
         micButton.addEventListener('click', () => {
@@ -919,9 +915,9 @@
         
         async function loadHistory() {
             try {
-                const response = await fetch(`${API_URL}/api/history?limit=20`, {
+                const response = await fetch(API_URL + '/api/history?limit=20', {
                     headers: {
-                        'Authorization': `Bearer ${authToken}`
+                        'Authorization': 'Bearer ' + authToken
                     }
                 });
                 
@@ -935,11 +931,7 @@
                 if (data.history && data.history.length > 0) {
                     data.history.forEach(msg => addMessage(msg.message, msg.role));
                 } else {
-                    const welcome = `👋 Welcome to your Coherence AI Tutor!  
-I'm here to help you with personalized learning and exploring your Genius Zone.  
-What would you like to learn about today? 🌟
-
-${speechSupported ? '💡 Tip: Click the microphone button to ask questions using your voice!' : ''}`;
+                    const welcome = '👋 Welcome to your Coherence AI Tutor!\nI\'m here to help you with personalized learning and exploring your Genius Zone.\nWhat would you like to learn about today? 🌟\n\n' + (speechSupported ? '💡 Tip: Click the microphone button to ask questions using your voice!' : '');
                     addMessage(welcome, 'tutor');
                 }
 
@@ -951,7 +943,7 @@ ${speechSupported ? '💡 Tip: Click the microphone button to ask questions usin
         
         function addMessage(text, role) {
             const messageDiv = document.createElement('div');
-            messageDiv.className = `message ${role}`;
+            messageDiv.className = 'message ' + role;
             
             const contentDiv = document.createElement('div');
             contentDiv.className = 'message-content';
@@ -1023,11 +1015,11 @@ ${speechSupported ? '💡 Tip: Click the microphone button to ask questions usin
             showTypingIndicator();
             
             try {
-                const response = await fetch(`${API_URL}/api/chat`, {
+                const response = await fetch(API_URL + '/api/chat', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${authToken}`
+                        'Authorization': 'Bearer ' + authToken
                     },
                     body: JSON.stringify({
                         message: message,
