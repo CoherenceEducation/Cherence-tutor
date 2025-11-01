@@ -723,23 +723,29 @@
             };
             
             recognition.onresult = (event) => {
-                let interim = '';
-                
-                // Build complete transcript from all results
-                fullTranscript = '';
-                for (let i = 0; i < event.results.length; i++) {
-                    if (event.results[i].isFinal) {
-                        fullTranscript += event.results[i][0].transcript + ' ';
-                    } else {
-                        interim += event.results[i][0].transcript;
-                    }
+            let interimTranscript = '';
+            let finalTranscript = '';
+            
+            // Process all results
+            for (let i = 0; i < event.results.length; i++) {
+                const transcript = event.results[i][0].transcript;
+                if (event.results[i].isFinal) {
+                    finalTranscript += transcript + ' ';
+                } else {
+                    interimTranscript += transcript;
                 }
-                
-                // Display current state
-                const display = (fullTranscript + interim).trim();
-                voiceStatus.innerHTML = `<span class="pulse-dot"></span><span>${display || 'Listening...'}</span>`;
-                
-                console.log('Full:', fullTranscript, '| Interim:', interim);
+            }
+            
+            // Update stored transcript with finalized parts
+            if (finalTranscript) {
+                fullTranscript = finalTranscript.trim();
+            }
+            
+            // Display both final and interim
+            const displayText = (fullTranscript + ' ' + interimTranscript).trim();
+            voiceStatus.innerHTML = `<span class="pulse-dot"></span><span>${displayText || 'Listening...'}</span>`;
+            
+            console.log('Final stored:', fullTranscript, '| Current interim:', interimTranscript);
             };
             
             recognition.onerror = (event) => {
