@@ -355,6 +355,30 @@
             animation: pulse-dot 1.5s infinite;
         }
         
+        .voice-transcript-display {
+            font-size: 13px;
+            color: #023047;
+            padding: 12px 18px;
+            background: white;
+            border: 2px solid rgba(247, 181, 56, 0.4);
+            border-radius: 12px;
+            min-height: 52px;
+            max-height: 200px;
+            overflow-y: auto;
+            display: none;
+            line-height: 1.6;
+        }
+        
+        .voice-transcript-display.active {
+            display: block;
+            animation: slideIn 0.3s ease;
+        }
+        
+        .voice-transcript-display:empty::before {
+            content: 'Start speaking...';
+            color: #999;
+        }
+        
         @keyframes pulse-dot {
             0%, 100% { opacity: 1; }
             50% { opacity: 0.3; }
@@ -615,6 +639,7 @@
                     <span class="pulse-dot"></span>
                     <span>Listening... speak now</span>
                 </div>
+                <div class="voice-transcript-display" id="voiceTranscriptDisplay"></div>
                 <div class="input-controls">
                     <textarea 
                         id="messageInput" 
@@ -676,6 +701,7 @@
         const voiceCancelBtn = document.getElementById('voiceCancelBtn');
         const voiceConfirmBtn = document.getElementById('voiceConfirmBtn');
         const voiceStatus = document.getElementById('voiceStatus');
+        const voiceTranscriptDisplay = document.getElementById('voiceTranscriptDisplay');
         const privacyNotice = document.getElementById('privacyNotice');
         const errorMessage = document.getElementById('errorMessage');
         const infoMessage = document.getElementById('infoMessage');
@@ -703,13 +729,18 @@
             
             recognition.onstart = () => {
                 isListening = true;
+                accumulatedTranscript = '';
                 micButton.style.display = 'none';
                 voiceControls.classList.add('active');
                 voiceStatus.classList.add('active');
+                voiceTranscriptDisplay.classList.add('active');
                 privacyNotice.classList.add('active');
-                messageInput.value = '';
+                voiceTranscriptDisplay.innerHTML = 'Start speaking...';
+                messageInput.style.display = 'none';
                 console.log('🎤 Speech recognition started');
             };
+            
+            let accumulatedTranscript = '';
             
             recognition.onresult = (event) => {
                 let interimTranscript = '';
@@ -724,19 +755,16 @@
                     }
                 }
                 
-                const currentValue = messageInput.value;
-                const baseTranscript = currentValue.replace(/ \[\.\.\..*?\]$/, '');
-                
+                // Add final transcript to accumulated text
                 if (finalTranscript) {
-                    messageInput.value = (baseTranscript + ' ' + finalTranscript).trim();
-                } else if (interimTranscript) {
-                    messageInput.value = baseTranscript + (baseTranscript ? ' ' : '') + '[...' + interimTranscript + ']';
+                    accumulatedTranscript += finalTranscript;
                 }
                 
-                messageInput.style.height = 'auto';
-                messageInput.style.height = Math.min(messageInput.scrollHeight, 200) + 'px';
+                // Show accumulated + interim in the display area
+                const displayText = accumulatedTranscript + (interimTranscript ? '<span style="color: #999;">' + interimTranscript + '</span>' : '');
+                voiceTranscriptDisplay.innerHTML = displayText || 'Start speaking...';
                 
-                console.log(`📝 Transcript: "${messageInput.value}"`);
+                console.log(`📝 Voice: "${accumulatedTranscript}${interimTranscript}"`);
             };
             
             recognition.onerror = (event) => {
@@ -839,17 +867,23 @@
         function stopListening(clearText = true) {
             isListening = false;
             voiceControls.classList.remove('active');
+            voiceTranscriptDisplay.classList.remove('active');
             micButton.style.display = '';
             voiceStatus.classList.remove('active');
+            messageInput.style.display = '';
             
             if (clearText) {
                 messageInput.value = '';
-                messageInput.style.height = 'auto';
+                accumulatedTranscript = '';
             } else {
-                messageInput.value = messageInput.value.replace(/ \[\.\.\..*?\]$/, '').trim();
-                messageInput.style.height = 'auto';
-                messageInput.style.height = Math.min(messageInput.scrollHeight, 200) + 'px';
+                // User pressed tick - put the accumulated text into input for editing
+                messageInput.value = accumulatedTranscript.trim();
             }
+            
+            messageInput.disabled = false;
+            messageInput.style.height = 'auto';
+            messageInput.style.height = Math.min(messageInput.scrollHeight, 200) + 'px';
+            messageInput.focus();
             
             setTimeout(() => {
                 privacyNotice.classList.remove('active');
@@ -879,13 +913,7 @@
         voiceConfirmBtn.addEventListener('click', () => {
             console.log('✅ Voice input confirmed');
             stopListening(false);
-            
-            const text = messageInput.value.trim();
-            if (text) {
-                setTimeout(() => {
-                    sendMessage();
-                }, 100);
-            }
+            // Don't auto-send, just populate the input for user to review/edit
         });
         
         messageInput.addEventListener('input', function() {
