@@ -722,28 +722,34 @@
                 console.log('🎤 Speech recognition started');
             };
             
-            let fullTranscript = '';
-            
             recognition.onresult = (event) => {
                 let interimTranscript = '';
-                fullTranscript = '';
+                let finalTranscript = '';
                 
+                // Get all final results
                 for (let i = 0; i < event.results.length; i++) {
                     const transcript = event.results[i][0].transcript;
                     if (event.results[i].isFinal) {
-                        fullTranscript += transcript + ' ';
+                        finalTranscript += transcript + ' ';
                     } else {
                         interimTranscript += transcript;
                     }
                 }
                 
-                // Show only in voice status area, not in input
+                // Update fullTranscript with final results
+                if (finalTranscript) {
+                    fullTranscript += finalTranscript;
+                }
+                
+                // Show live transcript in voice status area
                 const displayText = (fullTranscript + interimTranscript).trim();
                 if (displayText) {
                     voiceStatus.innerHTML = `<span class="pulse-dot"></span><span>${displayText}</span>`;
+                } else {
+                    voiceStatus.innerHTML = `<span class="pulse-dot"></span><span>Listening... speak now</span>`;
                 }
                 
-                console.log(`📝 Transcript: "${displayText}"`);
+                console.log(`📝 Full: "${fullTranscript}" | Interim: "${interimTranscript}"`);
             };
             
             recognition.onerror = (event) => {
@@ -844,34 +850,48 @@
         }
         
         function stopListening(transferToInput = false) {
+            console.log(`Stopping listening. Transfer: ${transferToInput}, Text: "${fullTranscript}"`);
+            
             isListening = false;
-            voiceControls.classList.remove('active');
-            micButton.style.display = '';
-            voiceStatus.classList.remove('active');
             
-            if (transferToInput && fullTranscript) {
-                // Transfer the transcript to input box
-                messageInput.value = fullTranscript.trim();
-                messageInput.style.height = 'auto';
-                messageInput.style.height = Math.min(messageInput.scrollHeight, 200) + 'px';
-                messageInput.focus();
-                
-                // Show success message
-                showInfo('Voice input captured! Edit if needed, then press Send.');
-            }
-            
-            fullTranscript = '';
-            
-            setTimeout(() => {
-                privacyNotice.classList.remove('active');
-                voiceStatus.innerHTML = `<span class="pulse-dot"></span><span>Listening... speak now</span>`;
-            }, 3000);
-            
+            // Stop recognition first
             try {
                 recognition.stop();
             } catch (e) {
                 console.log('Error stopping recognition:', e);
             }
+            
+            // Hide voice controls
+            voiceControls.classList.remove('active');
+            micButton.style.display = '';
+            voiceStatus.classList.remove('active');
+            
+            if (transferToInput) {
+                const textToTransfer = fullTranscript.trim();
+                console.log(`Transferring text to input: "${textToTransfer}"`);
+                
+                if (textToTransfer) {
+                    // Transfer the transcript to input box
+                    messageInput.value = textToTransfer;
+                    messageInput.style.height = 'auto';
+                    messageInput.style.height = Math.min(messageInput.scrollHeight, 200) + 'px';
+                    messageInput.focus();
+                    
+                    // Show success message
+                    showInfo('✅ Voice captured! Edit if needed, then press Send.');
+                } else {
+                    showInfo('⚠️ No speech detected. Please try again.');
+                }
+            }
+            
+            // Reset transcript
+            fullTranscript = '';
+            
+            // Reset status after delay
+            setTimeout(() => {
+                privacyNotice.classList.remove('active');
+                voiceStatus.innerHTML = `<span class="pulse-dot"></span><span>Listening... speak now</span>`;
+            }, 3000);
         }
         
         micButton.addEventListener('click', () => {
