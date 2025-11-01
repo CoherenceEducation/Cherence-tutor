@@ -718,80 +718,53 @@
                 voiceControls.classList.add('active');
                 voiceStatus.classList.add('active');
                 privacyNotice.classList.add('active');
-                voiceStatus.innerHTML = `<span class="pulse-dot"></span><span>Listening... speak now</span>`;
-                console.log('🎤 Speech recognition started');
+                voiceStatus.innerHTML = `<span class="pulse-dot"></span><span>Listening...</span>`;
+                console.log('🎤 Started');
             };
             
             recognition.onresult = (event) => {
-                let interimTranscript = '';
-                let finalTranscript = '';
+                let interim = '';
                 
-                // Get all final results
+                // Build complete transcript from all results
+                fullTranscript = '';
                 for (let i = 0; i < event.results.length; i++) {
-                    const transcript = event.results[i][0].transcript;
                     if (event.results[i].isFinal) {
-                        finalTranscript += transcript + ' ';
+                        fullTranscript += event.results[i][0].transcript + ' ';
                     } else {
-                        interimTranscript += transcript;
+                        interim += event.results[i][0].transcript;
                     }
                 }
                 
-                // Update fullTranscript with final results
-                if (finalTranscript) {
-                    fullTranscript += finalTranscript;
-                }
+                // Display current state
+                const display = (fullTranscript + interim).trim();
+                voiceStatus.innerHTML = `<span class="pulse-dot"></span><span>${display || 'Listening...'}</span>`;
                 
-                // Show live transcript in voice status area
-                const displayText = (fullTranscript + interimTranscript).trim();
-                if (displayText) {
-                    voiceStatus.innerHTML = `<span class="pulse-dot"></span><span>${displayText}</span>`;
-                } else {
-                    voiceStatus.innerHTML = `<span class="pulse-dot"></span><span>Listening... speak now</span>`;
-                }
-                
-                console.log(`📝 Full: "${fullTranscript}" | Interim: "${interimTranscript}"`);
+                console.log('Full:', fullTranscript, '| Interim:', interim);
             };
             
             recognition.onerror = (event) => {
-                console.error('Speech recognition error:', event.error);
+                console.error('Error:', event.error);
                 
                 if (event.error === 'no-speech' || event.error === 'aborted') {
-                    stopListening(false);
                     return;
                 }
                 
-                let errorMsg = 'Voice input error. Please try again.';
-                
-                switch(event.error) {
-                    case 'audio-capture':
-                        errorMsg = 'No microphone found. Please check your device and try again.';
-                        break;
-                    case 'not-allowed':
-                        errorMsg = 'Microphone access denied. Please allow microphone access in your browser settings.';
-                        break;
-                    case 'network':
-                        errorMsg = 'Network error. Please check your connection and try again.';
-                        break;
-                    case 'service-not-allowed':
-                        errorMsg = 'Speech recognition service not available. Please ensure you\'re using HTTPS.';
-                        break;
+                let msg = 'Voice error. Please try again.';
+                if (event.error === 'not-allowed') {
+                    msg = 'Microphone access denied. Please enable it in your browser settings.';
                 }
                 
-                showError(errorMsg);
+                showError(msg);
                 stopListening(false);
             };
             
             recognition.onend = () => {
                 if (isListening) {
-                    console.log('🎤 Recognition ended, restarting...');
                     try {
                         recognition.start();
                     } catch (e) {
-                        console.log('Could not restart recognition:', e);
                         stopListening(false);
                     }
-                } else {
-                    console.log('🎤 Speech recognition ended');
                 }
             };
             
@@ -825,91 +798,70 @@
         function actuallyStartListening() {
             try {
                 recognition.start();
-                console.log('🎤 Speech recognition start requested');
             } catch (error) {
-                console.error('Error starting recognition:', error);
-                
                 if (error.name === 'InvalidStateError') {
-                    console.log('Recognition already running, stopping first...');
                     recognition.stop();
                     setTimeout(() => {
                         try {
                             recognition.start();
-                            console.log('🎤 Speech recognition restarted');
                         } catch (e) {
-                            console.error('Failed to restart recognition:', e);
-                            showError('Could not start voice input. Please try again.');
+                            showError('Could not start voice input');
                             stopListening(false);
                         }
                     }, 200);
                 } else {
-                    showError('Could not start voice input. Please try again.');
+                    showError('Could not start voice input');
                     stopListening(false);
                 }
             }
         }
         
         function stopListening(transferToInput = false) {
-            console.log(`Stopping listening. Transfer: ${transferToInput}, Text: "${fullTranscript}"`);
-            
             isListening = false;
             
-            // Stop recognition first
             try {
                 recognition.stop();
-            } catch (e) {
-                console.log('Error stopping recognition:', e);
-            }
+            } catch (e) {}
             
-            // Hide voice controls
             voiceControls.classList.remove('active');
             micButton.style.display = '';
             voiceStatus.classList.remove('active');
             
             if (transferToInput) {
-                const textToTransfer = fullTranscript.trim();
-                console.log(`Transferring text to input: "${textToTransfer}"`);
+                const text = fullTranscript.trim();
                 
-                if (textToTransfer) {
-                    // Transfer the transcript to input box
-                    messageInput.value = textToTransfer;
+                if (text) {
+                    messageInput.value = text;
                     messageInput.style.height = 'auto';
                     messageInput.style.height = Math.min(messageInput.scrollHeight, 200) + 'px';
                     messageInput.focus();
-                    
-                    // Show success message
-                    showInfo('✅ Voice captured! Edit if needed, then press Send.');
+                    showInfo('Voice captured successfully');
                 } else {
-                    showInfo('⚠️ No speech detected. Please try again.');
+                    showInfo('No speech detected');
                 }
             }
             
-            // Reset transcript
             fullTranscript = '';
             
-            // Reset status after delay
             setTimeout(() => {
                 privacyNotice.classList.remove('active');
-                voiceStatus.innerHTML = `<span class="pulse-dot"></span><span>Listening... speak now</span>`;
-            }, 3000);
+                voiceStatus.innerHTML = `<span class="pulse-dot"></span><span>Listening...</span>`;
+            }, 2000);
         }
         
         micButton.addEventListener('click', () => {
-            console.log('🎤 Microphone button clicked');
             if (!recognition) {
-                showError('Voice input is not available in your browser.');
+                showError('Voice input not available');
                 return;
             }
             actuallyStartListening();
         });
         
         voiceCancelBtn.addEventListener('click', () => {
-            console.log('❌ Voice input cancelled');
             stopListening(false);
         });
         
         voiceConfirmBtn.addEventListener('click', () => {
-            console.log('✅ Voice input confirmed');
             stopListening(true);
         });
         
