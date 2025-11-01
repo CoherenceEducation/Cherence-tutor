@@ -353,6 +353,90 @@
             display: block;
         }
         
+        .permission-prompt {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 32px;
+            border-radius: 16px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            z-index: 10000;
+            max-width: 400px;
+            text-align: center;
+            display: none;
+            animation: slideIn 0.3s ease;
+        }
+        
+        .permission-prompt.show {
+            display: block;
+        }
+        
+        .permission-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 9999;
+            display: none;
+        }
+        
+        .permission-overlay.show {
+            display: block;
+        }
+        
+        .permission-prompt h3 {
+            color: #023047;
+            margin-bottom: 16px;
+            font-size: 20px;
+        }
+        
+        .permission-prompt p {
+            color: #666;
+            margin-bottom: 24px;
+            line-height: 1.6;
+        }
+        
+        .permission-buttons {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+        }
+        
+        .permission-buttons button {
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 14px;
+        }
+        
+        .permission-buttons .allow-btn {
+            background: linear-gradient(135deg, #023047 0%, #f7b538 100%);
+            color: white;
+            border: none;
+        }
+        
+        .permission-buttons .allow-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(2, 48, 71, 0.3);
+        }
+        
+        .permission-buttons .cancel-btn {
+            background: white;
+            color: #666;
+            border: 2px solid #ddd;
+        }
+        
+        .permission-buttons .cancel-btn:hover {
+            border-color: #999;
+            color: #333;
+        }
+        
         @media (max-width: 768px) {
             .chat-header h1 { 
                 font-size: 18px; 
@@ -488,6 +572,21 @@
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         const speechSupported = !!SpeechRecognition;
         
+        // Check microphone permission status
+        async function checkMicrophonePermission() {
+            if (!navigator.permissions || !navigator.permissions.query) {
+                return 'prompt'; // Can't check, assume needs prompt
+            }
+            
+            try {
+                const result = await navigator.permissions.query({ name: 'microphone' });
+                return result.state; // 'granted', 'denied', or 'prompt'
+            } catch (error) {
+                console.log('Permission query not supported:', error);
+                return 'prompt';
+            }
+        }
+        
         // Initialize Speech Recognition
         function initSpeechRecognition() {
             if (!speechSupported) {
@@ -565,12 +664,34 @@
                 return;
             }
             
-            try {
-                recognition.start();
-            } catch (error) {
-                console.error('Error starting recognition:', error);
-                showError('Could not start voice input. Please try again.');
-            }
+            // Check permission state before starting
+            checkMicrophonePermission().then(permissionState => {
+                if (permissionState === 'denied') {
+                    showError('Microphone access denied. Please allow microphone access in your browser settings.');
+                    return;
+                }
+                
+                try {
+                    // This will trigger browser's permission prompt if not yet granted
+                    recognition.start();
+                    console.log('🎤 Starting speech recognition...');
+                } catch (error) {
+                    console.error('Error starting recognition:', error);
+                    if (error.name === 'InvalidStateError') {
+                        // Recognition already started, stop and restart
+                        recognition.stop();
+                        setTimeout(() => {
+                            try {
+                                recognition.start();
+                            } catch (e) {
+                                showError('Could not start voice input. Please try again.');
+                            }
+                        }, 100);
+                    } else {
+                        showError('Could not start voice input. Please try again.');
+                    }
+                }
+            });
         }
         
         function stopListening() {
