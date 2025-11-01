@@ -4,8 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Coherence AI Tutor</title>
-    <!-- Allow microphone access in iframe -->
-    <meta http-equiv="Permissions-Policy" content="microphone=(self)">
     <style>
         * {
             margin: 0;
@@ -185,23 +183,7 @@
             box-shadow: 0 0 0 3px rgba(247, 181, 56, 0.1);
         }
         
-        #messageInput.listening {
-            border-color: #ff4444;
-            background: #fff5f5;
-            box-shadow: 0 0 0 3px rgba(255, 68, 68, 0.1);
-        }
-        
-        .voice-controls {
-            display: none;
-            gap: 8px;
-            align-items: center;
-        }
-        
-        .voice-controls.active {
-            display: flex;
-        }
-        
-        #micButton, #confirmVoiceBtn, #cancelVoiceBtn {
+        #micButton {
             width: 52px;
             height: 52px;
             background: white;
@@ -226,14 +208,7 @@
         }
         
         #micButton.listening {
-            background: linear-gradient(135deg, #ff4444 0%, #ff6b6b 100%);
-            border-color: #ff4444;
-            animation: pulse 1.5s infinite;
-        }
-        
-        @keyframes pulse {
-            0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 68, 68, 0.7); }
-            50% { transform: scale(1.05); box-shadow: 0 0 0 10px rgba(255, 68, 68, 0); }
+            display: none;
         }
         
         #micButton svg {
@@ -243,40 +218,91 @@
             transition: fill 0.2s ease;
         }
         
-        #micButton.listening svg {
-            fill: white;
+        .voice-controls {
+            display: none;
+            gap: 12px;
+            align-items: center;
         }
         
-        #confirmVoiceBtn {
-            background: #4CAF50;
-            border-color: #4CAF50;
+        .voice-controls.active {
+            display: flex;
         }
         
-        #confirmVoiceBtn:hover {
-            background: #45a049;
-            transform: scale(1.05);
+        .voice-wave-container {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            padding: 0 20px;
+            min-width: 200px;
         }
         
-        #confirmVoiceBtn svg {
-            width: 28px;
-            height: 28px;
-            fill: white;
+        .voice-wave {
+            width: 4px;
+            height: 20px;
+            background: linear-gradient(135deg, #ff4444 0%, #ff6b6b 100%);
+            border-radius: 2px;
+            animation: wave 1.2s ease-in-out infinite;
         }
         
-        #cancelVoiceBtn {
-            background: #ff4444;
-            border-color: #ff4444;
+        .voice-wave:nth-child(1) { animation-delay: 0s; }
+        .voice-wave:nth-child(2) { animation-delay: 0.1s; }
+        .voice-wave:nth-child(3) { animation-delay: 0.2s; }
+        .voice-wave:nth-child(4) { animation-delay: 0.3s; }
+        .voice-wave:nth-child(5) { animation-delay: 0.4s; }
+        .voice-wave:nth-child(6) { animation-delay: 0.3s; }
+        .voice-wave:nth-child(7) { animation-delay: 0.2s; }
+        .voice-wave:nth-child(8) { animation-delay: 0.1s; }
+        
+        @keyframes wave {
+            0%, 100% { height: 20px; }
+            50% { height: 40px; }
         }
         
-        #cancelVoiceBtn:hover {
-            background: #e63939;
-            transform: scale(1.05);
+        .voice-action-btn {
+            width: 52px;
+            height: 52px;
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
         }
         
-        #cancelVoiceBtn svg {
+        .voice-action-btn svg {
             width: 24px;
             height: 24px;
             fill: white;
+        }
+        
+        #voiceCancelBtn {
+            background: linear-gradient(135deg, #666 0%, #888 100%);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+        }
+        
+        #voiceCancelBtn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+        
+        #voiceConfirmBtn {
+            background: linear-gradient(135deg, #023047 0%, #f7b538 100%);
+            box-shadow: 0 2px 8px rgba(2, 48, 71, 0.2);
+            animation: pulse-confirm 2s infinite;
+        }
+        
+        #voiceConfirmBtn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 12px rgba(2, 48, 71, 0.3);
+        }
+        
+        @keyframes pulse-confirm {
+            0%, 100% { box-shadow: 0 2px 8px rgba(2, 48, 71, 0.2); }
+            50% { box-shadow: 0 2px 20px rgba(247, 181, 56, 0.5); }
         }
         
         #sendButton {
@@ -306,15 +332,14 @@
         }
         
         .voice-status {
-            font-size: 13px;
+            font-size: 12px;
             color: #666;
-            padding: 8px 14px;
-            background: linear-gradient(135deg, #fff5f5 0%, #ffe5e5 100%);
-            border-radius: 8px;
+            padding: 4px 12px;
+            background: rgba(247, 181, 56, 0.1);
+            border-radius: 6px;
             display: none;
             align-items: center;
-            gap: 8px;
-            border: 1px solid rgba(255, 68, 68, 0.2);
+            gap: 6px;
         }
         
         .voice-status.active {
@@ -323,8 +348,8 @@
         }
         
         .voice-status .pulse-dot {
-            width: 10px;
-            height: 10px;
+            width: 8px;
+            height: 8px;
             background: #ff4444;
             border-radius: 50%;
             animation: pulse-dot 1.5s infinite;
@@ -333,26 +358,6 @@
         @keyframes pulse-dot {
             0%, 100% { opacity: 1; }
             50% { opacity: 0.3; }
-        }
-        
-        .voice-status-text {
-            font-weight: 600;
-            color: #ff4444;
-        }
-        
-        .interim-text {
-            font-size: 12px;
-            color: #999;
-            font-style: italic;
-            margin-top: 4px;
-            padding: 6px 12px;
-            background: rgba(247, 181, 56, 0.05);
-            border-radius: 6px;
-            display: none;
-        }
-        
-        .interim-text.active {
-            display: block;
         }
         
         .typing-indicator {
@@ -424,6 +429,90 @@
             display: block;
         }
         
+        .permission-prompt {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 32px;
+            border-radius: 16px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            z-index: 10000;
+            max-width: 400px;
+            text-align: center;
+            display: none;
+            animation: slideIn 0.3s ease;
+        }
+        
+        .permission-prompt.show {
+            display: block;
+        }
+        
+        .permission-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 9999;
+            display: none;
+        }
+        
+        .permission-overlay.show {
+            display: block;
+        }
+        
+        .permission-prompt h3 {
+            color: #023047;
+            margin-bottom: 16px;
+            font-size: 20px;
+        }
+        
+        .permission-prompt p {
+            color: #666;
+            margin-bottom: 24px;
+            line-height: 1.6;
+        }
+        
+        .permission-buttons {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+        }
+        
+        .permission-buttons button {
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 14px;
+        }
+        
+        .permission-buttons .allow-btn {
+            background: linear-gradient(135deg, #023047 0%, #f7b538 100%);
+            color: white;
+            border: none;
+        }
+        
+        .permission-buttons .allow-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(2, 48, 71, 0.3);
+        }
+        
+        .permission-buttons .cancel-btn {
+            background: white;
+            color: #666;
+            border: 2px solid #ddd;
+        }
+        
+        .permission-buttons .cancel-btn:hover {
+            border-color: #999;
+            color: #333;
+        }
+        
         @media (max-width: 768px) {
             .chat-header h1 { 
                 font-size: 18px; 
@@ -448,6 +537,11 @@
             #sendButton {
                 min-width: 70px;
                 padding: 14px 16px;
+            }
+            
+            .voice-wave-container {
+                min-width: 150px;
+                padding: 0 10px;
             }
         }
         
@@ -505,13 +599,22 @@
         <div class="error-message" id="errorMessage"></div>
         <div class="info-message" id="infoMessage"></div>
         
+        <div class="permission-overlay" id="permissionOverlay"></div>
+        <div class="permission-prompt" id="permissionPrompt">
+            <h3>🎤 Enable Voice Input</h3>
+            <p>To use voice input, we need access to your microphone. Your voice will be converted to text directly in your browser - no audio is recorded or stored.</p>
+            <div class="permission-buttons">
+                <button class="cancel-btn" id="cancelPermission">Cancel</button>
+                <button class="allow-btn" id="allowPermission">Allow Microphone</button>
+            </div>
+        </div>
+        
         <div class="input-area">
             <div class="input-wrapper">
                 <div class="voice-status" id="voiceStatus">
                     <span class="pulse-dot"></span>
-                    <span class="voice-status-text">🎤 Listening... (speak continuously)</span>
+                    <span>Listening... speak now</span>
                 </div>
-                <div class="interim-text" id="interimText">Recognizing...</div>
                 <div class="input-controls">
                     <textarea 
                         id="messageInput" 
@@ -519,30 +622,37 @@
                         rows="1"
                         disabled
                     ></textarea>
-                    <button id="micButton" title="Start/Stop voice input" disabled>
-                        <svg viewBox="0 0 24 24" id="micIcon">
+                    <button id="micButton" title="Voice input" disabled>
+                        <svg viewBox="0 0 24 24">
                             <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/>
                             <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/>
                         </svg>
-                        <svg viewBox="0 0 24 24" id="stopIcon" style="display: none;">
-                            <rect x="6" y="6" width="12" height="12" rx="2"/>
+                    </button>
+                </div>
+                <div class="voice-controls" id="voiceControls">
+                    <button id="voiceCancelBtn" class="voice-action-btn" title="Cancel">
+                        <svg viewBox="0 0 24 24">
+                            <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
                         </svg>
                     </button>
-                    <div class="voice-controls" id="voiceControls">
-                        <button id="confirmVoiceBtn" title="Confirm and send (✓)">
-                            <svg viewBox="0 0 24 24">
-                                <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
-                            </svg>
-                        </button>
-                        <button id="cancelVoiceBtn" title="Cancel and clear (✗)">
-                            <svg viewBox="0 0 24 24">
-                                <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
-                            </svg>
-                        </button>
+                    <div class="voice-wave-container">
+                        <div class="voice-wave"></div>
+                        <div class="voice-wave"></div>
+                        <div class="voice-wave"></div>
+                        <div class="voice-wave"></div>
+                        <div class="voice-wave"></div>
+                        <div class="voice-wave"></div>
+                        <div class="voice-wave"></div>
+                        <div class="voice-wave"></div>
                     </div>
+                    <button id="voiceConfirmBtn" class="voice-action-btn" title="Confirm & Send">
+                        <svg viewBox="0 0 24 24">
+                            <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+                        </svg>
+                    </button>
                 </div>
                 <div class="privacy-notice" id="privacyNotice">
-                    🔒 Voice is converted to text in your browser. No audio stored.
+                    🔒 Your voice is only converted to text in your browser. No audio is stored or sent to servers.
                 </div>
             </div>
             <button id="sendButton" disabled>Send</button>
@@ -550,40 +660,34 @@
     </div>
 
     <script>
-        // Configuration
         const API_URL = window.location.origin;
         const TOKEN_KEY = 'coherence_token';
         
-        // State
         let authToken = null;
         let sessionId = Date.now().toString();
         let recognition = null;
         let isListening = false;
-        let finalTranscript = '';
-        let interimTranscript = '';
         
-        // DOM elements
         const messagesContainer = document.getElementById('messages');
         const messageInput = document.getElementById('messageInput');
         const sendButton = document.getElementById('sendButton');
         const micButton = document.getElementById('micButton');
-        const micIcon = document.getElementById('micIcon');
-        const stopIcon = document.getElementById('stopIcon');
-        const voiceStatus = document.getElementById('voiceStatus');
         const voiceControls = document.getElementById('voiceControls');
-        const confirmVoiceBtn = document.getElementById('confirmVoiceBtn');
-        const cancelVoiceBtn = document.getElementById('cancelVoiceBtn');
-        const interimText = document.getElementById('interimText');
+        const voiceCancelBtn = document.getElementById('voiceCancelBtn');
+        const voiceConfirmBtn = document.getElementById('voiceConfirmBtn');
+        const voiceStatus = document.getElementById('voiceStatus');
         const privacyNotice = document.getElementById('privacyNotice');
         const errorMessage = document.getElementById('errorMessage');
         const infoMessage = document.getElementById('infoMessage');
         const welcomeMessage = document.getElementById('welcomeMessage');
+        const permissionPrompt = document.getElementById('permissionPrompt');
+        const permissionOverlay = document.getElementById('permissionOverlay');
+        const allowPermissionBtn = document.getElementById('allowPermission');
+        const cancelPermissionBtn = document.getElementById('cancelPermission');
         
-        // Check browser support for Speech Recognition
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         const speechSupported = !!SpeechRecognition;
         
-        // Initialize Speech Recognition
         function initSpeechRecognition() {
             if (!speechSupported) {
                 console.warn('Speech recognition not supported in this browser');
@@ -593,111 +697,119 @@
             
             recognition = new SpeechRecognition();
             recognition.lang = 'en-US';
-            recognition.continuous = true;  // Keep listening
-            recognition.interimResults = true;  // Show interim results
+            recognition.continuous = true;
+            recognition.interimResults = true;
             recognition.maxAlternatives = 1;
             
             recognition.onstart = () => {
                 isListening = true;
-                micButton.classList.add('listening');
-                messageInput.classList.add('listening');
-                voiceStatus.classList.add('active');
+                micButton.style.display = 'none';
                 voiceControls.classList.add('active');
+                voiceStatus.classList.add('active');
                 privacyNotice.classList.add('active');
-                micIcon.style.display = 'none';
-                stopIcon.style.display = 'block';
-                console.log('🎤 Continuous speech recognition started');
+                messageInput.value = '';
+                console.log('🎤 Speech recognition started');
             };
             
             recognition.onresult = (event) => {
-                interimTranscript = '';
+                let interimTranscript = '';
+                let finalTranscript = '';
                 
                 for (let i = event.resultIndex; i < event.results.length; i++) {
                     const transcript = event.results[i][0].transcript;
-                    
                     if (event.results[i].isFinal) {
                         finalTranscript += transcript + ' ';
-                        console.log('📝 Final:', transcript);
                     } else {
                         interimTranscript += transcript;
-                        console.log('📝 Interim:', transcript);
                     }
                 }
                 
-                // Update the input field with final transcript
-                messageInput.value = finalTranscript.trim();
+                const currentValue = messageInput.value;
+                const baseTranscript = currentValue.replace(/ \[\.\.\..*?\]$/, '');
+                
+                if (finalTranscript) {
+                    messageInput.value = (baseTranscript + ' ' + finalTranscript).trim();
+                } else if (interimTranscript) {
+                    messageInput.value = baseTranscript + (baseTranscript ? ' ' : '') + '[...' + interimTranscript + ']';
+                }
+                
                 messageInput.style.height = 'auto';
                 messageInput.style.height = Math.min(messageInput.scrollHeight, 200) + 'px';
                 
-                // Show interim text
-                if (interimTranscript) {
-                    interimText.textContent = interimTranscript;
-                    interimText.classList.add('active');
-                } else {
-                    interimText.classList.remove('active');
-                }
+                console.log(`📝 Transcript: "${messageInput.value}"`);
             };
             
             recognition.onerror = (event) => {
                 console.error('Speech recognition error:', event.error);
                 
+                if (event.error === 'no-speech' || event.error === 'aborted') {
+                    stopListening(false);
+                    return;
+                }
+                
                 let errorMsg = 'Voice input error. Please try again.';
                 
                 switch(event.error) {
-                    case 'no-speech':
-                        // Don't show error for no-speech in continuous mode
-                        console.log('No speech detected, continuing...');
-                        return;
                     case 'audio-capture':
-                        errorMsg = 'No microphone found. Please check your device.';
+                        errorMsg = 'No microphone found. Please check your device and try again.';
                         break;
                     case 'not-allowed':
-                        if (window.self !== window.top) {
-                            errorMsg = '🔒 Microphone blocked in iframe. Please open this chat in a new tab/window.\n\nYou can still type! 💬';
-                        } else {
-                            errorMsg = 'Microphone access denied. Click the 🔒 lock icon in the address bar and allow microphone access.';
-                        }
+                        errorMsg = 'Microphone access denied. Please allow microphone access in your browser settings.';
                         break;
                     case 'network':
-                        errorMsg = 'Network error. Please check your connection.';
+                        errorMsg = 'Network error. Please check your connection and try again.';
                         break;
-                    case 'aborted':
-                        // Don't show error for user-initiated abort
-                        console.log('Speech recognition stopped by user');
-                        return;
+                    case 'service-not-allowed':
+                        errorMsg = 'Speech recognition service not available. Please ensure you\'re using HTTPS.';
+                        break;
                 }
                 
                 showError(errorMsg);
-                stopListening();
+                stopListening(false);
             };
             
             recognition.onend = () => {
-                console.log('🎤 Speech recognition ended');
                 if (isListening) {
-                    // If still in listening mode, restart (for continuous listening)
+                    console.log('🎤 Recognition ended, restarting...');
                     try {
                         recognition.start();
-                        console.log('🎤 Restarting recognition for continuous listening...');
                     } catch (e) {
-                        console.error('Failed to restart recognition:', e);
-                        stopListening();
+                        console.log('Could not restart recognition:', e);
+                        stopListening(false);
                     }
+                } else {
+                    console.log('🎤 Speech recognition ended');
                 }
             };
             
             return true;
         }
         
-        function startListening() {
-            if (!recognition) {
-                showError('Voice input is not available in your browser.');
-                return;
-            }
-            
-            console.log('Starting continuous listening...');
-            finalTranscript = '';
-            interimTranscript = '';
-            
+        function showPermissionPrompt() {
+            permissionOverlay.classList.add('show');
+            permissionPrompt.classList.add('show');
+        }
+        
+        function hidePermissionPrompt() {
+            permissionOverlay.classList.remove('show');
+            permissionPrompt.classList.remove('show');
+        }
+        
+        allowPermissionBtn.addEventListener('click', () => {
+            hidePermissionPrompt();
+            setTimeout(() => actuallyStartListening(), 100);
+        });
+        
+        cancelPermissionBtn.addEventListener('click', () => {
+            hidePermissionPrompt();
+            showInfo('Voice input cancelled. You can type your message instead.');
+        });
+        
+        permissionOverlay.addEventListener('click', () => {
+            hidePermissionPrompt();
+        });
+        
+        function actuallyStartListening() {
             try {
                 recognition.start();
                 console.log('🎤 Speech recognition start requested');
@@ -714,79 +826,73 @@
                         } catch (e) {
                             console.error('Failed to restart recognition:', e);
                             showError('Could not start voice input. Please try again.');
+                            stopListening(false);
                         }
                     }, 200);
                 } else {
                     showError('Could not start voice input. Please try again.');
+                    stopListening(false);
                 }
             }
         }
         
-        function stopListening() {
+        function stopListening(clearText = true) {
             isListening = false;
-            micButton.classList.remove('listening');
-            messageInput.classList.remove('listening');
-            voiceStatus.classList.remove('active');
             voiceControls.classList.remove('active');
-            interimText.classList.remove('active');
-            micIcon.style.display = 'block';
-            stopIcon.style.display = 'none';
+            micButton.style.display = '';
+            voiceStatus.classList.remove('active');
             
-            if (recognition) {
-                try {
-                    recognition.stop();
-                } catch (e) {
-                    console.error('Error stopping recognition:', e);
-                }
+            if (clearText) {
+                messageInput.value = '';
+                messageInput.style.height = 'auto';
+            } else {
+                messageInput.value = messageInput.value.replace(/ \[\.\.\..*?\]$/, '').trim();
+                messageInput.style.height = 'auto';
+                messageInput.style.height = Math.min(messageInput.scrollHeight, 200) + 'px';
             }
             
             setTimeout(() => {
                 privacyNotice.classList.remove('active');
             }, 3000);
+            
+            try {
+                recognition.stop();
+            } catch (e) {
+                console.log('Error stopping recognition:', e);
+            }
         }
         
-        // Microphone button - Start/Stop
         micButton.addEventListener('click', () => {
-            console.log('🎤 Microphone button clicked, isListening:', isListening);
+            console.log('🎤 Microphone button clicked');
+            if (!recognition) {
+                showError('Voice input is not available in your browser.');
+                return;
+            }
+            actuallyStartListening();
+        });
+        
+        voiceCancelBtn.addEventListener('click', () => {
+            console.log('❌ Voice input cancelled');
+            stopListening(true);
+        });
+        
+        voiceConfirmBtn.addEventListener('click', () => {
+            console.log('✅ Voice input confirmed');
+            stopListening(false);
             
-            if (isListening) {
-                // Stop listening
-                stopListening();
-                showInfo('Voice input stopped');
-            } else {
-                // Start listening
-                startListening();
+            const text = messageInput.value.trim();
+            if (text) {
+                setTimeout(() => {
+                    sendMessage();
+                }, 100);
             }
         });
         
-        // Confirm button - Send the recognized text
-        confirmVoiceBtn.addEventListener('click', () => {
-            stopListening();
-            if (messageInput.value.trim()) {
-                showInfo('✓ Message confirmed. Sending...');
-                setTimeout(() => sendMessage(), 300);
-            } else {
-                showError('No text to send');
-            }
-        });
-        
-        // Cancel button - Clear and stop
-        cancelVoiceBtn.addEventListener('click', () => {
-            stopListening();
-            messageInput.value = '';
-            finalTranscript = '';
-            interimTranscript = '';
-            messageInput.style.height = 'auto';
-            showInfo('✗ Voice input cancelled');
-        });
-        
-        // Auto-resize textarea
         messageInput.addEventListener('input', function() {
             this.style.height = 'auto';
             this.style.height = Math.min(this.scrollHeight, 200) + 'px';
         });
         
-        // Initialize
         async function initialize() {
             const urlParams = new URLSearchParams(window.location.search);
             const urlToken = urlParams.get('token');
@@ -805,7 +911,6 @@
                 return;
             }
 
-            // Initialize speech recognition
             const speechInitialized = initSpeechRecognition();
             if (!speechInitialized) {
                 console.log('Voice input not available - hiding microphone button');
@@ -847,7 +952,7 @@
 I'm here to help you with personalized learning and exploring your Genius Zone.  
 What would you like to learn about today? 🌟
 
-${speechSupported ? '💡 Tip: Click the 🎤 microphone to speak continuously. Click ✓ to send or ✗ to cancel!' : ''}`;
+${speechSupported ? '💡 Tip: Click the microphone button to ask questions using your voice!' : ''}`;
                     addMessage(welcome, 'tutor');
                 }
 
@@ -924,8 +1029,6 @@ ${speechSupported ? '💡 Tip: Click the 🎤 microphone to speak continuously. 
             addMessage(message, 'student'); 
             messageInput.value = '';
             messageInput.style.height = 'auto';
-            finalTranscript = '';
-            interimTranscript = '';
             
             sendButton.disabled = true;
             messageInput.disabled = true;
@@ -979,7 +1082,6 @@ ${speechSupported ? '💡 Tip: Click the 🎤 microphone to speak continuously. 
             }
         }
         
-        // Event listeners
         sendButton.addEventListener('click', sendMessage);
         messageInput.addEventListener('keypress', (e) => {
             if (e.key === 'Enter' && !e.shiftKey) {
@@ -988,7 +1090,6 @@ ${speechSupported ? '💡 Tip: Click the 🎤 microphone to speak continuously. 
             }
         });
         
-        // Initialize on load
         initialize();
     </script>
 </body>
